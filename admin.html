@@ -133,56 +133,81 @@
     <section class="card" style="max-width:none;">
       <h2 style="font-size:1.1rem;margin-bottom:0.2rem;">Create a Review</h2>
 
-      <label for="review-name">Review Name</label>
-      <input type="text" id="review-name" class="input-field" placeholder="e.g. South Texas Week 1" style="margin-bottom:0.6rem;">
+      <!-- Step 1: Review Name -->
+      <div id="rev-step-1">
+        <label for="review-name">Review Name</label>
+        <input type="text" id="review-name" class="input-field" placeholder="e.g. South Texas Week 1" style="margin-bottom:0.6rem;">
+        <button id="rev-step1-next" class="btn btn-primary btn-sm" style="width:100%;">Next &rarr;</button>
+      </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.8rem;">
-        <div>
-          <label for="review-start">Start Date</label>
-          <input type="date" id="review-start" required style="width:100%;">
+      <!-- Step 2: Travel Days -->
+      <div id="rev-step-2" hidden>
+        <label style="font-weight:700;font-size:0.9rem;">Travel Days</label>
+        <p style="font-size:0.82rem;color:var(--text-light);margin:0 0 0.5rem;">Will there be a beginning and/or ending travel day?</p>
+        <div style="margin-bottom:0.5rem;">
+          <label><input type="checkbox" id="rev-travel-start-chk"> Beginning Travel Day</label>
+          <div id="rev-travel-start-wrap" style="margin-left:1.5rem;margin-top:0.3rem;" hidden>
+            <label>Travel Start Date</label>
+            <input type="date" id="rev-travel-start" style="width:100%;">
+          </div>
         </div>
-        <div>
-          <label for="review-end">End Date</label>
-          <input type="date" id="review-end" required style="width:100%;">
+        <div style="margin-bottom:0.5rem;">
+          <label><input type="checkbox" id="rev-travel-end-chk"> Ending Travel Day</label>
+          <div id="rev-travel-end-wrap" style="margin-left:1.5rem;margin-top:0.3rem;" hidden>
+            <label>Travel End Date</label>
+            <input type="date" id="rev-travel-end" style="width:100%;">
+          </div>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button id="rev-step2-back" class="btn btn-outline btn-sm" style="flex:1;">&larr; Back</button>
+          <button id="rev-step2-next" class="btn btn-primary btn-sm" style="flex:1;">Next &rarr;</button>
         </div>
       </div>
 
-      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 0.6rem;">
-
-      <label style="font-weight:700;font-size:0.85rem;">Add Offices</label>
-      <div id="review-office-picker" style="margin-bottom:0.4rem;"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-        <div>
-          <label>Office Start</label>
-          <input type="date" id="review-office-start" style="width:100%;">
-        </div>
-        <div>
-          <label>Office End</label>
-          <input type="date" id="review-office-end" style="width:100%;">
+      <!-- Step 3: Number of Offices -->
+      <div id="rev-step-3" hidden>
+        <label for="rev-office-count" style="font-weight:700;font-size:0.9rem;">How many offices will be reviewed?</label>
+        <input type="number" id="rev-office-count" min="1" max="50" value="1" class="input-field" style="margin-bottom:0.6rem;width:80px;">
+        <div style="display:flex;gap:0.5rem;">
+          <button id="rev-step3-back" class="btn btn-outline btn-sm" style="flex:1;">&larr; Back</button>
+          <button id="rev-step3-next" class="btn btn-primary btn-sm" style="flex:1;">Next &rarr;</button>
         </div>
       </div>
-      <button id="review-add-office-btn" class="btn btn-outline btn-sm" style="width:100%;margin-top:0.4rem;">+ Add Office</button>
-      <div id="review-offices-list" class="fin-tags" style="margin-top:0.4rem;"></div>
 
-      <hr style="border:none;border-top:1px solid var(--border);margin:0.6rem 0;">
-
-      <label style="font-weight:700;font-size:0.85rem;">Assign Leads <span style="font-weight:400;font-size:0.75rem;color:var(--text-light);">(optional)</span></label>
-      <div style="margin-bottom:0.3rem;">
-        <label for="review-user-sel">User</label>
-        <select id="review-user-sel" style="width:100%;"></select>
+      <!-- Step 4: Office Details -->
+      <div id="rev-step-4" hidden>
+        <label style="font-weight:700;font-size:0.9rem;">Office Details</label>
+        <p style="font-size:0.82rem;color:var(--text-light);margin:0 0 0.5rem;">Enter each office and its review dates.</p>
+        <div id="rev-office-forms"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.6rem;">
+          <button id="rev-step4-back" class="btn btn-outline btn-sm" style="flex:1;">&larr; Back</button>
+          <button id="rev-step4-next" class="btn btn-primary btn-sm" style="flex:1;">Next &rarr;</button>
+        </div>
       </div>
-      <div style="margin-bottom:0.3rem;">
-        <label for="review-role-sel">Role</label>
-        <select id="review-role-sel" style="width:100%;">
-          <option value="lead">Workbook Lead</option>
-          <option value="teamlead">Review Lead</option>
-        </select>
-      </div>
-      <button id="review-assign-btn" class="btn btn-outline btn-sm" style="width:100%;">+ Assign</button>
-      <div id="review-assigned-tags" class="fin-tags" style="margin-top:0.4rem;"></div>
 
-      <button id="review-create-btn" class="btn btn-primary" style="width:100%;margin-top:0.8rem;">Create Review</button>
-      <p id="review-create-status" class="status-msg" hidden></p>
+      <!-- Step 5: Assign Leads -->
+      <div id="rev-step-5" hidden>
+        <label style="font-weight:700;font-size:0.85rem;">Assign Leads <span style="font-weight:400;font-size:0.75rem;color:var(--text-light);">(optional)</span></label>
+        <div style="margin-bottom:0.3rem;">
+          <label for="review-user-sel">User</label>
+          <select id="review-user-sel" style="width:100%;"></select>
+        </div>
+        <div style="margin-bottom:0.3rem;">
+          <label for="review-role-sel">Role</label>
+          <select id="review-role-sel" style="width:100%;">
+            <option value="lead">Workbook Lead</option>
+            <option value="teamlead">Review Lead</option>
+          </select>
+        </div>
+        <button id="review-assign-btn" class="btn btn-outline btn-sm" style="width:100%;">+ Assign</button>
+        <div id="review-assigned-tags" class="fin-tags" style="margin-top:0.4rem;"></div>
+
+        <div style="display:flex;gap:0.5rem;margin-top:0.6rem;">
+          <button id="rev-step5-back" class="btn btn-outline btn-sm" style="flex:1;">&larr; Back</button>
+          <button id="review-create-btn" class="btn btn-primary" style="flex:2;">Create Review</button>
+        </div>
+        <p id="review-create-status" class="status-msg" hidden></p>
+      </div>
     </section>
 
     <!-- Reviews Table -->
@@ -555,9 +580,8 @@
     renderUsers();
 
     // ========================================================
-    //  REVIEWS MANAGEMENT
+    //  REVIEWS MANAGEMENT — Wizard
     // ========================================================
-    OfficePicker.init('review-office-picker');
 
     var reviewUserSel    = document.getElementById('review-user-sel');
     var reviewRoleSel    = document.getElementById('review-role-sel');
@@ -569,6 +593,77 @@
 
     var reviewAssignments = []; // [{ userId, displayName, reviewRole }]
     var reviewOffices = [];     // [{ financeNum, officeName, startDate, endDate }]
+
+    // --- Wizard step navigation ---
+    function showStep(n) {
+      for (var s = 1; s <= 5; s++) {
+        var el = document.getElementById('rev-step-' + s);
+        if (el) el.hidden = (s !== n);
+      }
+    }
+
+    // Step 1 → 2
+    document.getElementById('rev-step1-next').addEventListener('click', function() { showStep(2); });
+
+    // Step 2 — travel day checkboxes
+    document.getElementById('rev-travel-start-chk').addEventListener('change', function() {
+      document.getElementById('rev-travel-start-wrap').hidden = !this.checked;
+    });
+    document.getElementById('rev-travel-end-chk').addEventListener('change', function() {
+      document.getElementById('rev-travel-end-wrap').hidden = !this.checked;
+    });
+    document.getElementById('rev-step2-back').addEventListener('click', function() { showStep(1); });
+    document.getElementById('rev-step2-next').addEventListener('click', function() { showStep(3); });
+
+    // Step 3 → 4: generate office forms
+    document.getElementById('rev-step3-back').addEventListener('click', function() { showStep(2); });
+    document.getElementById('rev-step3-next').addEventListener('click', function() {
+      var count = parseInt(document.getElementById('rev-office-count').value) || 1;
+      if (count < 1) count = 1;
+      if (count > 50) count = 50;
+      buildOfficeForms(count);
+      showStep(4);
+    });
+
+    function buildOfficeForms(count) {
+      var container = document.getElementById('rev-office-forms');
+      container.innerHTML = '';
+      for (var i = 0; i < count; i++) {
+        var div = document.createElement('div');
+        div.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;background:var(--bg-light);';
+        div.innerHTML =
+          '<label style="font-weight:700;font-size:0.85rem;">Office ' + (i + 1) + '</label>' +
+          '<div id="rev-office-picker-' + i + '" style="margin:0.3rem 0;"></div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">' +
+            '<div><label>Review Start</label><input type="date" class="rev-off-start" data-idx="' + i + '" style="width:100%;"></div>' +
+            '<div><label>Review End</label><input type="date" class="rev-off-end" data-idx="' + i + '" style="width:100%;"></div>' +
+          '</div>';
+        container.appendChild(div);
+        OfficePicker.init('rev-office-picker-' + i);
+      }
+    }
+
+    // Step 4 → 5
+    document.getElementById('rev-step4-back').addEventListener('click', function() { showStep(3); });
+    document.getElementById('rev-step4-next').addEventListener('click', function() {
+      // Collect offices
+      reviewOffices = [];
+      var forms = document.getElementById('rev-office-forms').children;
+      var valid = true;
+      for (var i = 0; i < forms.length; i++) {
+        var sel = OfficePicker.getValue('rev-office-picker-' + i);
+        var sd = forms[i].querySelector('.rev-off-start').value;
+        var ed = forms[i].querySelector('.rev-off-end').value;
+        if (!sel || !sd || !ed) { valid = false; continue; }
+        reviewOffices.push({ financeNum: sel.fin, officeName: sel.office, startDate: sd, endDate: ed });
+      }
+      if (reviewOffices.length === 0) { alert('Please fill in at least one office with dates.'); return; }
+      showStep(5);
+      populateUserDropdown(reviewUserSel, reviewAssignments);
+    });
+
+    // Step 5 back
+    document.getElementById('rev-step5-back').addEventListener('click', function() { showStep(4); });
 
     function populateUserDropdown(sel, excludeArr) {
       var users = Auth.getUsers();
@@ -633,24 +728,7 @@
       if (cntEl) cntEl.textContent = offices.length;
     }
 
-    // --- Add Office (create) ---
-    document.getElementById('review-add-office-btn').addEventListener('click', function() {
-      var sel = OfficePicker.getValue('review-office-picker');
-      if (!sel) return;
-      var osd = document.getElementById('review-office-start').value;
-      var oed = document.getElementById('review-office-end').value;
-      if (!osd || !oed) return;
-      // Prevent duplicate
-      for (var i = 0; i < reviewOffices.length; i++) {
-        if (reviewOffices[i].financeNum === sel.fin) return;
-      }
-      reviewOffices.push({ financeNum: sel.fin, officeName: sel.office, startDate: osd, endDate: oed });
-      document.getElementById('review-office-start').value = '';
-      document.getElementById('review-office-end').value = '';
-      rebindOfficesList(reviewOffices, document.getElementById('review-offices-list'));
-    });
-
-    rebindOfficesList(reviewOffices, document.getElementById('review-offices-list'));
+    rebindOfficesList(reviewOffices, document.getElementById('review-offices-list') || document.createElement('div'));
 
     reviewAssignBtn.addEventListener('click', function() {
       var uid = reviewUserSel.value;
@@ -685,12 +763,20 @@
     reviewCreateBtn.addEventListener('click', function() {
       reviewStatus.hidden = true;
       var name = document.getElementById('review-name').value.trim();
-      var sd = document.getElementById('review-start').value;
-      var ed = document.getElementById('review-end').value;
-      if (!sd || !ed) { showRevStatus('Please enter overall start and end dates.', 'error'); return; }
-      if (ed < sd) { showRevStatus('End date must be on or after start date.', 'error'); return; }
       if (reviewOffices.length === 0) { showRevStatus('Please add at least one office.', 'error'); return; }
       if (!name) name = reviewOffices.map(function(o) { return o.officeName; }).join(', ');
+
+      // Compute overall start/end from travel days + office dates
+      var allDates = reviewOffices.map(function(o) { return o.startDate; }).concat(reviewOffices.map(function(o) { return o.endDate; }));
+      var travelStartChk = document.getElementById('rev-travel-start-chk').checked;
+      var travelEndChk = document.getElementById('rev-travel-end-chk').checked;
+      var travelStart = travelStartChk ? document.getElementById('rev-travel-start').value : '';
+      var travelEnd = travelEndChk ? document.getElementById('rev-travel-end').value : '';
+      if (travelStart) allDates.push(travelStart);
+      if (travelEnd) allDates.push(travelEnd);
+      allDates.sort();
+      var sd = allDates[0];
+      var ed = allDates[allDates.length - 1];
 
       var assignList = reviewAssignments.map(function(a) { return { userId: a.userId, reviewRole: a.reviewRole }; });
       Reviews.create({
@@ -698,6 +784,8 @@
         offices: reviewOffices.slice(),
         startDate: sd,
         endDate: ed,
+        travelStart: travelStart || null,
+        travelEnd: travelEnd || null,
         assignments: assignList,
         createdBy: user.id
       });
@@ -709,10 +797,16 @@
       reviewOffices = [];
       reviewAssignTags.innerHTML = '';
       populateUserDropdown(reviewUserSel, reviewAssignments);
-      rebindOfficesList(reviewOffices, document.getElementById('review-offices-list'));
       document.getElementById('review-name').value = '';
-      document.getElementById('review-start').value = '';
-      document.getElementById('review-end').value = '';
+      document.getElementById('rev-travel-start-chk').checked = false;
+      document.getElementById('rev-travel-end-chk').checked = false;
+      document.getElementById('rev-travel-start-wrap').hidden = true;
+      document.getElementById('rev-travel-end-wrap').hidden = true;
+      document.getElementById('rev-travel-start').value = '';
+      document.getElementById('rev-travel-end').value = '';
+      document.getElementById('rev-office-count').value = '1';
+      document.getElementById('rev-office-forms').innerHTML = '';
+      showStep(1);
       renderReviews();
       renderUsers();
     });
@@ -829,16 +923,18 @@
         var officesList = (r.offices || []).map(function(o) {
           return esc(o.officeName) + ' (' + esc(o.financeNum) + ')';
         }).join('<br>') || esc(r.officeName || '—');
+        var isOwner = (r.createdBy === user.id) || (user.role === 'admin');
+        var actions = isOwner
+          ? '<button class="btn btn-outline btn-sm rev-edit-btn" data-id="' + r.id + '">Edit</button> ' +
+            '<button class="btn btn-sm rev-reset-btn" data-id="' + r.id + '" style="background:#dc2626;color:#fff;">Reset</button> ' +
+            '<button class="btn btn-danger btn-sm rev-del-btn" data-id="' + r.id + '">Delete</button>'
+          : '<span style="color:var(--text-light);font-size:0.8rem;">View only</span>';
         return '<tr>' +
           '<td>' + esc(r.name || r.officeName || '—') + '</td>' +
           '<td class="wrap-cell">' + officesList + '</td>' +
           '<td>' + esc(r.startDate) + ' &ndash; ' + esc(r.endDate) + '</td>' +
           '<td class="wrap-cell">' + assigned + '</td>' +
-          '<td class="actions-cell">' +
-            '<button class="btn btn-outline btn-sm rev-edit-btn" data-id="' + r.id + '">Edit</button> ' +
-            '<button class="btn btn-sm rev-reset-btn" data-id="' + r.id + '" style="background:#dc2626;color:#fff;">Reset</button> ' +
-            '<button class="btn btn-danger btn-sm rev-del-btn" data-id="' + r.id + '">Delete</button>' +
-          '</td></tr>';
+          '<td class="actions-cell">' + actions + '</td></tr>';
       }).join('');
 
       if (reviews.length === 0) {

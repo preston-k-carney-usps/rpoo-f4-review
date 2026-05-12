@@ -1997,21 +1997,64 @@
       dateRangeStr = fmt(result.minDate) + ' \u2013 ' + fmt(result.maxDate);
     }
 
+    // Calculate weeks of data
+    var weeksOfData = 0;
+    if (result.minDate && result.maxDate) {
+      var diffMs = result.maxDate.getTime() - result.minDate.getTime();
+      weeksOfData = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000) * 10) / 10;
+    }
+
     html += '<div style="display:flex;gap:1rem;margin-bottom:0.75rem;flex-wrap:wrap;">';
     html += '<span class="info-chip"><strong>' + result.totalEntries + '</strong> Clock Rings</span>';
     html += '<span class="info-chip"><strong>' + result.matchedKeys.length + '</strong> Employees Matched</span>';
     html += '<span class="info-chip" style="' + (devEmps > 0 ? 'background:var(--warning-bg);color:var(--warning);' : '') + '"><strong>' + devEmps + '</strong> With Deviations</span>';
     if (dateRangeStr) {
-      html += '<span class="info-chip" style="background:var(--info-bg,#e0f2fe);color:var(--info,#0369a1);">\ud83d\udcc5 ' + dateRangeStr + '</span>';
+      var weeksColor = weeksOfData > 8 ? 'background:rgba(220,38,38,0.1);color:#dc2626;' : 'background:var(--info-bg,#e0f2fe);color:var(--info,#0369a1);';
+      html += '<span class="info-chip" style="' + weeksColor + '">\ud83d\udcc5 ' + dateRangeStr + ' (' + weeksOfData + ' weeks)</span>';
+    }
+    if (weeksOfData > 8) {
+      html += '<div style="width:100%;padding:0.35rem 0.6rem;background:rgba(220,38,38,0.06);border:1px solid #fca5a5;border-radius:4px;font-size:0.78rem;color:#dc2626;font-weight:600;">\u26a0\ufe0f Data spans ' + weeksOfData + ' weeks \u2014 8 weeks max is recommended for accurate analysis.</div>';
     }
     html += '</div>';
 
     if (result.unmatchedKeys.length > 0) {
-      html += '<details style="margin-bottom:0.75rem;font-size:0.82rem;">';
-      html += '<summary style="cursor:pointer;color:var(--text-light);">' + result.unmatchedKeys.length + ' clock ring employees not found in roster (click to expand)</summary>';
-      html += '<div style="padding:0.5rem;columns:3;font-size:0.78rem;color:var(--text-light);">';
-      result.unmatchedKeys.forEach(function(k) { html += '<div>' + esc(k.replace('_', ', ')) + '</div>'; });
-      html += '</div></details>';
+      // Load validated employees from localStorage
+      var VALIDATED_KEY = 'clerk_obs_clockring_validated_' + reviewId + '_' + currentFin;
+      var validatedEmps = {};
+      try { validatedEmps = JSON.parse(localStorage.getItem(VALIDATED_KEY)) || {}; } catch(e) {}
+
+      var unvalidatedCount = result.unmatchedKeys.filter(function(k) { return !validatedEmps[k]; }).length;
+
+      html += '<div style="margin-bottom:0.75rem;padding:0.6rem 0.75rem;background:rgba(220,38,38,0.06);border:1.5px solid #fca5a5;border-radius:6px;">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">';
+      html += '<span style="font-size:0.88rem;font-weight:700;color:#dc2626;">\u26a0\ufe0f ' + result.unmatchedKeys.length + ' employee(s) showing time but NOT on WebCOINS roster</span>';
+      if (unvalidatedCount > 0) {
+        html += '<span style="background:#dc2626;color:#fff;padding:0.15rem 0.45rem;border-radius:10px;font-size:0.72rem;font-weight:600;">' + unvalidatedCount + ' need validation</span>';
+      } else {
+        html += '<span style="background:#16a34a;color:#fff;padding:0.15rem 0.45rem;border-radius:10px;font-size:0.72rem;font-weight:600;">\u2713 All validated</span>';
+      }
+      html += '</div>';
+      html += '<p style="font-size:0.78rem;color:#991b1b;margin:0 0 0.5rem;">These employees have TACS clock ring entries but were not found in the WebCOINS roster. Please validate whether each is a Function 4 employee working in this office. Validated employees will be included in the schedule.</p>';
+      html += '<div id="clockring-unmatched-list" style="display:flex;flex-direction:column;gap:0.3rem;">';
+      result.unmatchedKeys.forEach(function(k) {
+        var empStatus = validatedEmps[k] ? validatedEmps[k].status : null;
+        var displayName = k.replace('_', ', ');
+        var bgColor = empStatus === 'f4' ? 'rgba(22,163,74,0.04)' : empStatus === 'not-f4' ? 'rgba(220,38,38,0.04)' : 'var(--bg-light)';
+        html += '<div class="clockring-unmatched-row" data-key="' + esc(k) + '" style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:var(--radius);background:' + bgColor + ';font-size:0.82rem;">';
+        html += '<span style="flex:1;font-weight:600;' + (empStatus === 'not-f4' ? 'text-decoration:line-through;color:#9ca3af;' : '') + '">' + esc(displayName) + '</span>';
+        if (empStatus === 'f4') {
+          html += '<span style="color:#16a34a;font-weight:600;font-size:0.78rem;">\u2713 Validated as F4</span>';
+          html += '<button class="btn btn-outline btn-sm clockring-unvalidate-btn" data-key="' + esc(k) + '" style="font-size:0.68rem;padding:0.1rem 0.35rem;color:#6b7280;">Undo</button>';
+        } else if (empStatus === 'not-f4') {
+          html += '<span style="color:#dc2626;font-weight:600;font-size:0.78rem;">\u2717 Excluded (Not F4)</span>';
+          html += '<button class="btn btn-outline btn-sm clockring-unvalidate-btn" data-key="' + esc(k) + '" style="font-size:0.68rem;padding:0.1rem 0.35rem;color:#6b7280;">Undo</button>';
+        } else {
+          html += '<button class="btn btn-sm clockring-validate-btn" data-key="' + esc(k) + '" style="font-size:0.72rem;padding:0.2rem 0.5rem;background:#16a34a;color:#fff;border:none;">\u2713 Validate as F4</button>';
+          html += '<button class="btn btn-outline btn-sm clockring-exclude-btn" data-key="' + esc(k) + '" style="font-size:0.72rem;padding:0.2rem 0.5rem;color:#dc2626;border-color:#dc2626;">\u2717 Not F4</button>';
+        }
+        html += '</div>';
+      });
+      html += '</div></div>';
     }
 
     if (devEmps === 0) {
@@ -2067,6 +2110,43 @@
 
         dhtml += '</tbody></table>';
         detailDiv.innerHTML = dhtml;
+      });
+    });
+
+    // Wire validate/exclude/undo buttons for unmatched employees
+    var VALIDATED_KEY = 'clerk_obs_clockring_validated_' + reviewId + '_' + currentFin;
+    clockOutput.querySelectorAll('.clockring-validate-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = btn.dataset.key;
+        var validated = {};
+        try { validated = JSON.parse(localStorage.getItem(VALIDATED_KEY)) || {}; } catch(e) {}
+        validated[key] = { status: 'f4', validatedAt: new Date().toISOString() };
+        localStorage.setItem(VALIDATED_KEY, JSON.stringify(validated));
+        // Re-run analysis to refresh display
+        var savedCsv = localStorage.getItem('clerk_obs_clockring_csv_' + reviewId);
+        if (savedCsv) analyzeClockRings(savedCsv, true);
+      });
+    });
+    clockOutput.querySelectorAll('.clockring-exclude-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = btn.dataset.key;
+        var validated = {};
+        try { validated = JSON.parse(localStorage.getItem(VALIDATED_KEY)) || {}; } catch(e) {}
+        validated[key] = { status: 'not-f4', validatedAt: new Date().toISOString() };
+        localStorage.setItem(VALIDATED_KEY, JSON.stringify(validated));
+        var savedCsv = localStorage.getItem('clerk_obs_clockring_csv_' + reviewId);
+        if (savedCsv) analyzeClockRings(savedCsv, true);
+      });
+    });
+    clockOutput.querySelectorAll('.clockring-unvalidate-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = btn.dataset.key;
+        var validated = {};
+        try { validated = JSON.parse(localStorage.getItem(VALIDATED_KEY)) || {}; } catch(e) {}
+        delete validated[key];
+        localStorage.setItem(VALIDATED_KEY, JSON.stringify(validated));
+        var savedCsv = localStorage.getItem('clerk_obs_clockring_csv_' + reviewId);
+        if (savedCsv) analyzeClockRings(savedCsv, true);
       });
     });
   }

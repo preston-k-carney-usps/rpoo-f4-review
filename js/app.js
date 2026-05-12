@@ -194,6 +194,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var obsInfoSection = document.getElementById('obs-info-section');
     if (obsInfoSection && !isLeadNotesMode) obsInfoSection.hidden = true;
 
+    // Hide POD-only elements for leads
+    var _podDayToggle = document.getElementById('pod-day-toggle');
+    var _podPhaseBar = document.getElementById('pod-phase-bar');
+    if (_podDayToggle) _podDayToggle.hidden = true;
+    if (_podPhaseBar) _podPhaseBar.hidden = true;
+
     // Show the title bar with review name (no date) + office buttons inline
     var wbModeBar = document.getElementById('wb-mode-bar');
     if (wbModeBar) {
@@ -294,9 +300,11 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.wb-phase-tabs').forEach(function(el) {
         el.style.display = (activePhase && el.dataset.phase === activePhase.dataset.phase) ? '' : 'none';
       });
-      // Hide obs info bar in manage mode
+      // Hide obs info bar and day toggle in manage mode
       var obsInfoSection = document.getElementById('obs-info-section');
       if (obsInfoSection) obsInfoSection.hidden = true;
+      var dayToggle = document.getElementById('pod-day-toggle');
+      if (dayToggle) dayToggle.hidden = true;
       // Update toggle
       var manageBtn = document.getElementById('wb-mode-manage');
       var notesBtn = document.getElementById('wb-mode-notes');
@@ -332,6 +340,27 @@ document.addEventListener('DOMContentLoaded', function() {
       // Show the obs info bar
       var obsInfoSection = document.getElementById('obs-info-section');
       if (obsInfoSection) obsInfoSection.hidden = false;
+      // Show Day 1 / Day 2 toggle for lead notes mode
+      var leadDayToggle = document.getElementById('pod-day-toggle');
+      if (leadDayToggle) {
+        leadDayToggle.hidden = false;
+        var leadDayBtns = leadDayToggle.querySelectorAll('.pod-day-btn');
+        var currentDay = setup.dayNumber || '1';
+        leadDayBtns.forEach(function(b) {
+          b.classList.toggle('wb-lead-toggle--active', b.dataset.day === currentDay);
+        });
+        leadDayBtns.forEach(function(btn) {
+          btn.onclick = function() {
+            var newDay = btn.dataset.day;
+            leadDayBtns.forEach(function(b) { b.classList.remove('wb-lead-toggle--active'); });
+            btn.classList.add('wb-lead-toggle--active');
+            setup.dayNumber = newDay;
+            if (dayNumInput) dayNumInput.value = newDay;
+            localStorage.setItem('reviewDaySetup', JSON.stringify(setup));
+            window.location.href = 'review.html?rid=' + encodeURIComponent(reviewId) + '&day=' + encodeURIComponent(newDay);
+          };
+        });
+      }
       // Update toggle
       var manageBtn = document.getElementById('wb-mode-manage');
       var notesBtn = document.getElementById('wb-mode-notes');
@@ -510,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.pod-phase-btn[data-pod-phase="' + phase + '"]').classList.add('wb-phase-btn--active');
 
         if (phase === 'pod-pre') {
-          // Show Travel Survey + Schedules tabs only
+          // Show Travel Survey + Schedules + Documents tabs only
           if (reviewTabs) reviewTabs.style.display = '';
           allTabPanels.forEach(function(p) { p.classList.remove('active'); });
           if (podPostPanel) podPostPanel.hidden = true;
@@ -518,8 +547,10 @@ document.addEventListener('DOMContentLoaded', function() {
           if (travelTab) { travelTab.hidden = false; travelTab.style.display = ''; travelTab.click(); }
           var schedTab = document.querySelector('.review-tab[data-tab="tab-schedules"]');
           if (schedTab) { schedTab.style.display = ''; }
+          var docsTabPre = document.querySelector('.review-tab[data-tab="tab-documents"]');
+          if (docsTabPre) { docsTabPre.style.display = ''; docsTabPre.hidden = false; }
         } else if (phase === 'pod-review') {
-          // Show normal review tabs (no travel, no schedules)
+          // Show normal review tabs (no travel, no schedules) + documents
           if (reviewTabs) reviewTabs.style.display = '';
           if (podPostPanel) podPostPanel.hidden = true;
           allReviewTabs.forEach(function(t) { t.style.display = ''; });
@@ -527,6 +558,9 @@ document.addEventListener('DOMContentLoaded', function() {
           if (travelTab) { travelTab.hidden = true; travelTab.style.display = 'none'; }
           var schedTabR = document.querySelector('.review-tab[data-tab="tab-schedules"]');
           if (schedTabR) { schedTabR.style.display = 'none'; }
+          // Keep documents tab visible
+          var docsTabRev = document.querySelector('.review-tab[data-tab="tab-documents"]');
+          if (docsTabRev) { docsTabRev.style.display = ''; docsTabRev.hidden = false; }
           // Click the first visible tab
           var firstTab = reviewTabs ? reviewTabs.querySelector('.review-tab:not([hidden]):not([style*=\"display: none\"])') : null;
           if (firstTab) firstTab.click();
@@ -726,17 +760,46 @@ document.addEventListener('DOMContentLoaded', function() {
   var effectiveUserId = (setup.viewingUserId && setup.isLeadUser) ? setup.viewingUserId : authUser.id;
   var isViewingOther = (effectiveUserId !== authUser.id);
 
+  // Find ALL clerk observations for this user/review/day (multiple sets)
+  var allClerkSets = [];
+  var activeSetIndex = parseInt(urlParams.get('set') || '0', 10) || 0;
   var existingObs = null;
   if (reviewId && setup.dayNumber) {
     var allObs = Storage.hydrate(Storage.getAll());
     var targetDay = String(setup.dayNumber);
-    // Primary match: exact reviewId + dayNumber + userId
+
+    // Collect all clerk observations for this user/review/day
     for (var ei = 0; ei < allObs.length; ei++) {
-      if (allObs[ei].reviewId === reviewId &&
-          String(allObs[ei].dayNumber) === targetDay &&
-          allObs[ei].userId === effectiveUserId) {
-        existingObs = allObs[ei];
-        break;
+      var _o = allObs[ei];
+      if (_o.reviewId === reviewId &&
+          String(_o.dayNumber) === targetDay &&
+          _o.userId === effectiveUserId &&
+          _o.reviewRole !== 'mailhandler') {
+        allClerkSets.push(_o);
+      }
+    }
+    // Sort by setIndex (missing = 0)
+    allClerkSets.sort(function(a, b) { return (a.setIndex || 0) - (b.setIndex || 0); });
+
+    // Pick the active set
+    if (allClerkSets.length > 0) {
+      if (activeSetIndex < allClerkSets.length) {
+        existingObs = allClerkSets[activeSetIndex];
+      } else {
+        existingObs = allClerkSets[0];
+        activeSetIndex = 0;
+      }
+    }
+
+    // Primary match: exact reviewId + dayNumber + userId (fallback for MH)
+    if (!existingObs) {
+      for (var ei2 = 0; ei2 < allObs.length; ei2++) {
+        if (allObs[ei2].reviewId === reviewId &&
+            String(allObs[ei2].dayNumber) === targetDay &&
+            allObs[ei2].userId === effectiveUserId) {
+          existingObs = allObs[ei2];
+          break;
+        }
       }
     }
     // Fallback: match user's drafts with same reviewId but missing/wrong dayNumber
@@ -1250,6 +1313,8 @@ document.addEventListener('DOMContentLoaded', function() {
         employeeName: isMH && employeeInput ? employeeInput.value.trim() : undefined,
         status: 'draft',
         rows: rows,
+        setIndex: (!isMH && activeSetIndex > 0) ? activeSetIndex : undefined,
+        setLabel: (!isMH && existingObs && existingObs.setLabel) ? existingObs.setLabel : undefined,
       });
       existingObs = entry;
       var statusEl = isMH ? (window.mhAutosaveEl || clerkAutosaveEl) : clerkAutosaveEl;
@@ -1288,6 +1353,203 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isMH && employeeInput) s.employeeName = employeeInput.value.trim();
     return s;
   };
+  window.appActiveSetIndex = activeSetIndex;
+  window.appAllClerkSets = allClerkSets;
+
+  // --- Clerk Notes Set Switcher ---
+  if (!isMH && reviewId) {
+    var clerkSetsBar = document.getElementById('clerk-sets-bar');
+    var clerkSetTabs = document.getElementById('clerk-set-tabs');
+    var clerkAddSetBtn = document.getElementById('clerk-add-set-btn');
+
+    function renderClerkSetTabs() {
+      if (!clerkSetTabs) return;
+      // Always show at least Set 1; hide bar if only 1 set and no rows
+      var numSets = Math.max(allClerkSets.length, 1);
+      if (numSets <= 1 && clerkSetsBar) clerkSetsBar.style.display = 'none';
+      else if (clerkSetsBar) clerkSetsBar.style.display = '';
+
+      var html = '';
+      for (var i = 0; i < numSets; i++) {
+        var isActive = (i === activeSetIndex);
+        var label = 'Set ' + (i + 1);
+        if (allClerkSets[i] && allClerkSets[i].setLabel) label = allClerkSets[i].setLabel;
+        html += '<button class="clerk-set-tab wb-lead-toggle' + (isActive ? ' wb-lead-toggle--active' : '') + '" data-set="' + i + '" style="padding:0.25rem 0.6rem;font-size:0.78rem;">' + label + '</button>';
+      }
+      clerkSetTabs.innerHTML = html;
+
+      // Wire click handlers
+      clerkSetTabs.querySelectorAll('.clerk-set-tab').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var newSet = parseInt(btn.dataset.set, 10);
+          if (newSet === activeSetIndex) return;
+          // Save current rows first
+          autoSaveDraft();
+          // Navigate to the new set
+          var params = new URLSearchParams(window.location.search);
+          params.set('set', newSet);
+          window.location.href = 'review.html?' + params.toString();
+        });
+      });
+    }
+
+    if (clerkAddSetBtn) {
+      clerkAddSetBtn.addEventListener('click', function() {
+        // Save current rows first
+        autoSaveDraft();
+        // Create a new observation for the new set
+        var newSetIdx = allClerkSets.length;
+        var label = prompt('Label for this set (optional, e.g. "Dock Area", "Window"):');
+        var newObs = Storage.add({
+          office: officeInput.value.trim(),
+          financeNum: financeNum,
+          reviewId: reviewId,
+          date: dateInput.value,
+          dayNumber: dayNumInput.value.trim(),
+          observerName: observerInput.value.trim(),
+          userId: authUser.id,
+          reviewRole: reviewRole,
+          status: 'draft',
+          rows: [],
+          setIndex: newSetIdx,
+          setLabel: (label && label.trim()) ? label.trim() : ''
+        });
+        allClerkSets.push(newObs);
+        // Navigate to the new set
+        var params = new URLSearchParams(window.location.search);
+        params.set('set', newSetIdx);
+        window.location.href = 'review.html?' + params.toString();
+      });
+    }
+
+    renderClerkSetTabs();
+
+    // Show the bar if there are multiple sets (always show Add button)
+    if (clerkSetsBar && allClerkSets.length >= 1) {
+      clerkSetsBar.style.display = '';
+    }
+  }
+
+  // --- POD Shared Documents Tab ---
+  if (!isMH && reviewId && !isWorkbookMode) {
+    var podDocsContainer = document.getElementById('pod-docs-container');
+    var podDocsEmpty = document.getElementById('pod-docs-empty');
+    var docsTab = document.querySelector('.review-tab[data-tab="tab-documents"]');
+
+    // Show documents tab for PODs if they have a review
+    if (docsTab && !isLead) docsTab.hidden = false;
+
+    // IndexedDB reader (mirrors schedule.js doc storage)
+    var DOC_DB_NAME = 'clerk_obs_documents';
+    var DOC_DB_VERSION = 1;
+    var DOC_STORE = 'files';
+    function openDocDB(cb) {
+      var req = indexedDB.open(DOC_DB_NAME, DOC_DB_VERSION);
+      req.onupgradeneeded = function(e) { var db = e.target.result; if (!db.objectStoreNames.contains(DOC_STORE)) db.createObjectStore(DOC_STORE); };
+      req.onsuccess = function(e) { cb(null, e.target.result); };
+      req.onerror = function(e) { cb(e.target.error); };
+    }
+    function loadDocBlob(key, cb) {
+      openDocDB(function(err, db) {
+        if (err) return cb(err);
+        var tx = db.transaction(DOC_STORE, 'readonly');
+        var req = tx.objectStore(DOC_STORE).get(key);
+        req.onsuccess = function() { cb(null, req.result || null); };
+        req.onerror = function(e) { cb(e.target.error); };
+      });
+    }
+    function docBlobKey(fin, docId) { return 'doc_' + reviewId + '_' + fin + '_' + docId; }
+    function loadDocMeta(fin) {
+      try { return JSON.parse(localStorage.getItem('clerk_obs_docmeta_' + reviewId + '_' + fin)) || {}; } catch(e) { return {}; }
+    }
+
+    var DEFAULT_DOC_CONFIGS = [
+      { id: 'apwu-lmou', label: 'APWU LMOU' },
+      { id: 'npmhu-lmou', label: 'NPMHU LMOU' },
+      { id: 'ri399', label: 'RI-399' },
+      { id: 'union-letter', label: 'Union Notification Letter' }
+    ];
+    function loadCustomTypes() {
+      try { return JSON.parse(localStorage.getItem('clerk_obs_doc_types_' + reviewId)) || []; } catch(e) { return []; }
+    }
+    function getAllDocConfigs() { return DEFAULT_DOC_CONFIGS.concat(loadCustomTypes()); }
+
+    function renderPodDocs() {
+      if (!podDocsContainer) return;
+      var rev = currentRev;
+      if (!rev) return;
+      var offices = (rev.offices && rev.offices.length > 0) ? rev.offices : [{ officeName: rev.officeName || 'Office', financeNum: rev.financeNum || '' }];
+      var configs = getAllDocConfigs();
+      var hasAny = false;
+      var html = '';
+
+      offices.forEach(function(office, oi) {
+        var fin = office.financeNum || '';
+        var meta = loadDocMeta(fin);
+        var oName = office.officeName || ('FIN ' + fin);
+        var officeDocs = [];
+
+        configs.forEach(function(cfg) {
+          if (meta[cfg.id] && meta[cfg.id].name) {
+            officeDocs.push({ cfg: cfg, meta: meta[cfg.id], fin: fin });
+          }
+        });
+
+        if (officeDocs.length === 0) return;
+        hasAny = true;
+
+        html += '<div style="' + (oi > 0 ? 'margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border);' : '') + '">';
+        html += '<h3 style="font-size:0.88rem;margin:0 0 0.5rem;">' + oName + '</h3>';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.5rem;">';
+
+        officeDocs.forEach(function(doc) {
+          html += '<div style="padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg);">';
+          html += '<div style="font-weight:600;font-size:0.82rem;margin-bottom:0.25rem;">' + doc.cfg.label + '</div>';
+          html += '<div style="font-size:0.76rem;color:var(--text-light);margin-bottom:0.35rem;">' + doc.meta.name + '</div>';
+          html += '<div style="display:flex;gap:0.3rem;">';
+          html += '<button class="btn btn-outline btn-sm pod-doc-view" data-fin="' + fin + '" data-doc="' + doc.cfg.id + '" style="font-size:0.72rem;padding:0.15rem 0.45rem;">👁 View</button>';
+          html += '<button class="btn btn-outline btn-sm pod-doc-dl" data-fin="' + fin + '" data-doc="' + doc.cfg.id + '" data-name="' + doc.meta.name + '" style="font-size:0.72rem;padding:0.15rem 0.45rem;">⬇ Download</button>';
+          html += '</div></div>';
+        });
+
+        html += '</div></div>';
+      });
+
+      podDocsContainer.innerHTML = html;
+      if (podDocsEmpty) podDocsEmpty.hidden = hasAny;
+
+      // Wire view/download buttons
+      podDocsContainer.querySelectorAll('.pod-doc-view').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          loadDocBlob(docBlobKey(btn.dataset.fin, btn.dataset.doc), function(err, blob) {
+            if (err || !blob) { alert('File not found. The review lead may not have uploaded it yet.'); return; }
+            var url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+          });
+        });
+      });
+      podDocsContainer.querySelectorAll('.pod-doc-dl').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          loadDocBlob(docBlobKey(btn.dataset.fin, btn.dataset.doc), function(err, blob) {
+            if (err || !blob) { alert('File not found.'); return; }
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = btn.dataset.name || 'document';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+          });
+        });
+      });
+    }
+
+    // Render on tab activation
+    var docTabBtn = document.querySelector('.review-tab[data-tab="tab-documents"]');
+    if (docTabBtn) {
+      docTabBtn.addEventListener('click', function() { renderPodDocs(); });
+    }
+    // Initial render if tab is visible
+    if (podDocsContainer) renderPodDocs();
+  }
 
   // Only add initial row if no existing submission was loaded
   if (isMH) {

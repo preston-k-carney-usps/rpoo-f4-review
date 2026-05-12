@@ -302,12 +302,14 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.wb-phase-tabs').forEach(function(el) {
         el.style.display = (activePhase && el.dataset.phase === activePhase.dataset.phase) ? '' : 'none';
       });
-      // Hide obs info bar and POD phase bar in manage mode (but keep day toggle visible)
+      // Hide obs info bar in manage mode
       var obsInfoSection = document.getElementById('obs-info-section');
       if (obsInfoSection) obsInfoSection.hidden = true;
+      // Day toggle: only show in "review" phase, not pre/post
       var dayToggle = document.getElementById('pod-day-toggle');
+      var activePhaseValue = activePhase ? activePhase.dataset.phase : 'pre-review';
       if (dayToggle) {
-        dayToggle.hidden = false;
+        dayToggle.hidden = (activePhaseValue !== 'review');
         var wbDayBtns = dayToggle.querySelectorAll('.pod-day-btn');
         var currentDay = setup.dayNumber || '1';
         wbDayBtns.forEach(function(b) {
@@ -440,6 +442,10 @@ document.addEventListener('DOMContentLoaded', function() {
         phaseTabBars.forEach(function(bar) {
           bar.style.display = bar.dataset.phase === phase ? '' : 'none';
         });
+
+        // Show Day 1/Day 2 toggle only in "review" phase, hide in pre/post
+        var dayToggle = document.getElementById('pod-day-toggle');
+        if (dayToggle) dayToggle.hidden = (phase !== 'review');
 
         // Activate first sub-tab of active phase
         var activeBar = document.querySelector('.wb-phase-tabs[data-phase="' + phase + '"]');

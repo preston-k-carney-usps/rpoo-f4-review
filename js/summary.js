@@ -542,43 +542,85 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Timeline ---
     renderTimeline(day1Obs, day2Obs, isMH);
 
-    if (day1Obs.length > 0) {
-      day1Section.hidden = false;
-      var d1 = day1Obs[0];
-      day1Title.textContent = 'Day 1 \u2014 ' + formatDate(d1.date);
-      day1Content.innerHTML = isMH ? renderMhDayEntries(d1) : renderDayEntries(d1);
-      var del1 = day1Section.querySelector('.day-delete-btn');
-      if (del1) {
-        del1.hidden = !Auth.canDelete(d1);
-        del1.onclick = function() {
-          if (confirm('Delete Day 1 data for ' + group.office + '?')) {
-            day1Obs.forEach(function(o) { Storage.delete(o.id); });
-            refreshList();
-          }
-        };
-      }
-    } else {
-      day1Section.hidden = true;
+    // Helper: combine multiple observations into one merged obs for display
+    function mergeObs(obsArr) {
+      if (obsArr.length === 0) return null;
+      if (obsArr.length === 1) return obsArr[0];
+      var merged = {
+        office: obsArr[0].office,
+        financeNum: obsArr[0].financeNum,
+        reviewId: obsArr[0].reviewId,
+        date: obsArr[0].date,
+        dayNumber: obsArr[0].dayNumber,
+        observerName: obsArr.map(function(o) { return o.observerName || ''; }).filter(Boolean).join(', '),
+        status: obsArr.some(function(o) { return o.status === 'draft'; }) ? 'draft' : 'submitted',
+        rows: []
+      };
+      obsArr.forEach(function(o) { merged.rows = merged.rows.concat(o.rows || []); });
+      return merged;
     }
 
-    if (day2Obs.length > 0) {
-      day2Section.hidden = false;
-      var d2 = day2Obs[0];
-      day2Title.textContent = 'Day 2 \u2014 ' + formatDate(d2.date);
-      day2Content.innerHTML = isMH ? renderMhDayEntries(d2) : renderDayEntries(d2);
-      var del2 = day2Section.querySelector('.day-delete-btn');
-      if (del2) {
-        del2.hidden = !Auth.canDelete(d2);
-        del2.onclick = function() {
-          if (confirm('Delete Day 2 data for ' + group.office + '?')) {
-            day2Obs.forEach(function(o) { Storage.delete(o.id); });
+    // Helper: render a day section with combined + individual set dropdowns
+    function renderDaySection(dayObs, daySection, dayTitle, dayContent, dayLabel) {
+      if (dayObs.length === 0) { daySection.hidden = true; return; }
+      daySection.hidden = false;
+      var d = dayObs[0];
+      dayTitle.textContent = dayLabel + ' \u2014 ' + formatDate(d.date);
+
+      // Separate clerk sets from other obs
+      var clerkObs = dayObs.filter(function(o) { return o.reviewRole !== 'mailhandler'; });
+      var mhObsDay = dayObs.filter(function(o) { return o.reviewRole === 'mailhandler'; });
+
+      var html = '';
+      if (isMH) {
+        html = renderMhDayEntries(d);
+      } else if (clerkObs.length <= 1) {
+        html = renderDayEntries(d);
+      } else {
+        // Multiple clerk sets — show combined overview + individual dropdowns
+        var combined = mergeObs(clerkObs);
+        html += '<div style="margin-bottom:0.5rem;font-size:0.82rem;color:var(--text-light);font-weight:600;">' +
+          '\uD83D\uDCCB Combined Overview (' + clerkObs.length + ' sets, ' + combined.rows.length + ' total entries)</div>';
+        html += renderDayEntries(combined);
+
+        // Individual set accordions
+        html += '<div style="margin-top:1rem;">';
+        html += '<div style="font-size:0.82rem;font-weight:600;color:var(--text-light);margin-bottom:0.4rem;">Individual Sets</div>';
+        clerkObs.forEach(function(setObs, si) {
+          var setLabel = setObs.setLabel || ('Set ' + (si + 1));
+          var setRows = setObs.rows ? setObs.rows.length : 0;
+          var setMins = (setObs.rows || []).reduce(function(s, r) { return s + (r.elapsed || 0); }, 0);
+          var statusBadge = setObs.status === 'draft'
+            ? '<span style="color:var(--danger);font-weight:600;font-size:0.72rem;">DRAFT</span>'
+            : '<span style="color:var(--success);font-weight:600;font-size:0.72rem;">\u2713</span>';
+          html += '<details style="border:1px solid var(--border);border-radius:var(--radius);margin-bottom:0.35rem;">';
+          html += '<summary style="cursor:pointer;padding:0.4rem 0.65rem;font-size:0.82rem;background:var(--bg-light);border-radius:var(--radius);">' +
+            '<strong>' + escHtml(setLabel) + '</strong>' +
+            ' \u2014 ' + setRows + ' entries \u00B7 ' + Storage.formatElapsed(setMins) +
+            ' ' + statusBadge +
+            (setObs.observerName ? ' \u00B7 ' + escHtml(setObs.observerName) : '') +
+            '</summary>';
+          html += '<div style="padding:0.5rem 0.65rem;">' + renderDayEntries(setObs) + '</div>';
+          html += '</details>';
+        });
+        html += '</div>';
+      }
+      dayContent.innerHTML = html;
+
+      var del = daySection.querySelector('.day-delete-btn');
+      if (del) {
+        del.hidden = !Auth.canDelete(d);
+        del.onclick = function() {
+          if (confirm('Delete ' + dayLabel + ' data for ' + group.office + '?')) {
+            dayObs.forEach(function(o) { Storage.delete(o.id); });
             refreshList();
           }
         };
       }
-    } else {
-      day2Section.hidden = true;
     }
+
+    renderDaySection(day1Obs, day1Section, day1Title, day1Content, 'Day 1');
+    renderDaySection(day2Obs, day2Section, day2Title, day2Content, 'Day 2');
 
     // Hide Hours by LDC for clerk if MH, vice versa not needed
     // (both use same ldcBars element, already populated above)

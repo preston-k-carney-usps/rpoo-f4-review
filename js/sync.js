@@ -124,34 +124,38 @@
 
     // Build gist PATCH payload
     var files = {};
+    var hasContent = false;
     keys.forEach(function(key) {
       var val = pending[key];
-      if (val === null) {
-        // Delete file from gist
-        files[keyToFile(key)] = null;
-      } else if (val === '' || val === undefined) {
-        // Empty string causes 422 — skip or delete
-        files[keyToFile(key)] = null;
+      if (val === null || val === '' || val === undefined) {
+        // Deletes/empty values — don't send to gist (causes 422 if file doesn't exist)
+        // Just remove from pending queue silently
       } else {
         files[keyToFile(key)] = { content: String(val) };
+        hasContent = true;
       }
     });
 
-    // If payload is too large, split into smaller batches
-    var payload = JSON.stringify({ files: files });
-    if (payload.length > 5000000) {
-      // Too large — flush one key at a time
-      var singleKey = keys[0];
-      var singleVal = pending[singleKey];
-      var singleFiles = {};
-      if (singleVal === null || singleVal === '' || singleVal === undefined) {
-        singleFiles[keyToFile(singleKey)] = null;
-      } else {
-        singleFiles[keyToFile(singleKey)] = { content: String(singleVal) };
+    // Remove null/empty keys from pending immediately
+    var cleanPending = getPendingWrites();
+    keys.forEach(function(k) {
+      var v = cleanPending[k];
+      if (v === null || v === '' || v === undefined) {
+        delete cleanPending[k];
       }
-      payload = JSON.stringify({ files: singleFiles });
-      keys = [singleKey]; // only remove this one from pending on success
+    });
+    savePendingWrites(cleanPending);
+
+    // If only deletes, nothing to send
+    if (!hasContent) {
+      updateStatusUI('online', 'Synced');
+      return;
     }
+
+    // Rebuild keys to only include content keys
+    keys = Object.keys(files).map(function(f) { return fileToKey(f); });
+
+    var payload = JSON.stringify({ files: files });
 
     var x = new XMLHttpRequest();
     x.open('PATCH', GIST_API, true);

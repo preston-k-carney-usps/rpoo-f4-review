@@ -2137,6 +2137,8 @@ html.dark .wb-lead-toggle { background: #1e293b; color: #94a3b8; }
 html.dark .wb-lead-toggle--active { background: var(--primary); color: #fff; }
 
 /* Phase toggle (Pre-Review / Review) */
+[hidden] { display: none !important; }
+#pod-day-toggle { display: flex; }
 .wb-phase-bar {
   display: flex; gap: 0; align-items: center; margin-bottom: 0.75rem;
   background: var(--bg-light); border-radius: 10px; padding: 0.3rem;

@@ -2114,6 +2114,7 @@
     }
 
     assignSearchInput.addEventListener('input', runAssignSearch);
+    window._wbAssignSearch = runAssignSearch;
 
     // Keyboard: Enter selects the first result, Escape closes dropdown
     assignSearchInput.addEventListener('keydown', function(e) {

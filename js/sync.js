@@ -381,10 +381,8 @@
       bar.style.background = '#065f46';
       bar.style.color = '#d1fae5';
       dot.style.background = '#34d399';
-      bar.style.transform = 'translateY(0)';
-      setTimeout(function() {
-        if (online && getPendingCount() === 0) bar.style.transform = 'translateY(100%)';
-      }, 3000);
+      // Stay hidden for normal syncs, only show briefly on reconnect
+      bar.style.transform = 'translateY(100%)';
     } else if (state === 'offline') {
       bar.style.background = '#7c2d12';
       bar.style.color = '#fed7aa';

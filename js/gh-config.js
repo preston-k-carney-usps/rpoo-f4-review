@@ -124,6 +124,29 @@
           '&#8592; Back</button>' +
       '</div>' +
 
+      // Name picker panel (hidden) — shown after team code join
+      '<div id="gh-pick" style="display:none;">' +
+        '<div style="text-align:center;margin-bottom:16px;">' +
+          '<div style="font-size:2rem;margin-bottom:4px;">&#128100;</div>' +
+          '<h3 style="color:#818cf8;margin:0 0 6px;">Who are you?</h3>' +
+          '<p style="color:#94a3b8;margin:0;font-size:0.85rem;">Select your name, then set a password.</p>' +
+        '</div>' +
+        '<select id="gh-name-pick" style="width:100%;padding:12px;background:#0f172a;' +
+          'border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:1rem;' +
+          'margin-bottom:12px;box-sizing:border-box;appearance:auto;">' +
+          '<option value="">-- Choose your name --</option></select>' +
+        '<input id="gh-pick-pass" type="password" placeholder="Set your password" style="width:100%;padding:12px;' +
+          'background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;' +
+          'font-size:1rem;margin-bottom:8px;box-sizing:border-box;" />' +
+        '<input id="gh-pick-pass2" type="password" placeholder="Confirm password" style="width:100%;padding:12px;' +
+          'background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;' +
+          'font-size:1rem;margin-bottom:12px;box-sizing:border-box;" />' +
+        '<button id="gh-btn-pick-go" style="width:100%;padding:12px;background:#4f46e5;' +
+          'color:white;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;">' +
+          'Set Password &amp; Sign In</button>' +
+        '<div id="gh-pick-msg" style="margin-top:10px;font-size:0.85rem;text-align:center;"></div>' +
+      '</div>' +
+
       // Success panel (hidden)
       '<div id="gh-success" style="display:none;text-align:center;">' +
         '<div style="font-size:2.5rem;margin-bottom:8px;">&#9989;</div>' +
@@ -240,6 +263,7 @@
     };
 
     // === Join: Connect with team code ===
+    var _joinedUsers = []; // stashed for name picker
     $('gh-btn-connect').onclick = function() {
       var code = $('gh-code-in').value.trim();
       if (!code) { msg('gh-join-msg', 'Please paste the team code.', false); return; }
@@ -259,6 +283,38 @@
           localStorage.setItem(GIST_KEY, parsed.gistId);
           localStorage.setItem(TOKEN_KEY, parsed.token);
           window.GH_CONFIG = { gistId: parsed.gistId, token: parsed.token };
+
+          // Parse users from gist response
+          try {
+            var gistData = JSON.parse(x.responseText);
+            var usersFile = gistData.files && gistData.files['clerk_obs_users.json'];
+            if (usersFile && usersFile.content) {
+              var users = JSON.parse(usersFile.content);
+              if (Array.isArray(users) && users.length > 0) {
+                // Save users to localStorage so sync has them
+                localStorage.setItem('clerk_obs_users', JSON.stringify(users));
+                _joinedUsers = users;
+
+                // Populate dropdown sorted by name
+                var sel = $('gh-name-pick');
+                users.slice().sort(function(a, b) {
+                  return (a.displayName || a.username).localeCompare(b.displayName || b.username);
+                }).forEach(function(u) {
+                  var opt = document.createElement('option');
+                  opt.value = u.id;
+                  opt.textContent = u.displayName || u.username;
+                  sel.appendChild(opt);
+                });
+
+                hide('gh-join');
+                show('gh-pick');
+                $('gh-name-pick').focus();
+                return;
+              }
+            }
+          } catch(e) { /* fall through to simple success */ }
+
+          // No users in gist — show plain success
           hide('gh-join');
           show('gh-success');
         } else {
@@ -300,6 +356,54 @@
 
     // === Done - reload ===
     $('gh-btn-done').onclick = function() { location.reload(); };
+
+    // === Name picker: set password & sign in ===
+    $('gh-btn-pick-go').onclick = function() {
+      var sel = $('gh-name-pick');
+      var userId = sel.value;
+      var pw = $('gh-pick-pass').value;
+      var pw2 = $('gh-pick-pass2').value;
+
+      if (!userId) { msg('gh-pick-msg', 'Please select your name.', false); return; }
+      if (!pw || pw.length < 4) { msg('gh-pick-msg', 'Password must be at least 4 characters.', false); return; }
+      if (pw !== pw2) { msg('gh-pick-msg', 'Passwords do not match.', false); return; }
+
+      // Find and update user in stored users
+      var users = JSON.parse(localStorage.getItem('clerk_obs_users') || '[]');
+      var found = null;
+      for (var i = 0; i < users.length; i++) {
+        if (users[i].id === userId) {
+          users[i].password = pw;
+          users[i].mustChangePassword = false;
+          found = users[i];
+          break;
+        }
+      }
+      if (!found) { msg('gh-pick-msg', 'User not found. Try again.', false); return; }
+
+      // Save updated users list
+      localStorage.setItem('clerk_obs_users', JSON.stringify(users));
+
+      // Create session so Auth.currentUser() finds them after reload
+      localStorage.setItem('clerk_obs_session', JSON.stringify({
+        userId: found.id,
+        username: found.username,
+        displayName: found.displayName || found.username,
+        role: found.role,
+        loginAt: new Date().toISOString()
+      }));
+
+      msg('gh-pick-msg', 'Welcome, ' + (found.displayName || found.username) + '!', true);
+      $('gh-btn-pick-go').disabled = true;
+
+      // Brief delay so they see the welcome, then redirect
+      setTimeout(function() {
+        window.location.href = 'index.html';
+      }, 800);
+    };
+    $('gh-pick-pass2').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') $('gh-btn-pick-go').click();
+    });
   }
 
   if (document.readyState === 'loading') {

@@ -392,6 +392,23 @@
           } catch(e) {}
         });
 
+        // Also include review leaders (lead + teamlead) as travelers
+        var leaderCount = 0;
+        if (review && review.assignments) {
+          review.assignments.forEach(function(a) {
+            if ((a.reviewRole === 'lead' || a.reviewRole === 'teamlead') && a.userId && !seenIds[a.userId]) {
+              var u = (typeof Auth !== 'undefined' && Auth.getUserById) ? Auth.getUserById(a.userId) : null;
+              var name = u ? (u.displayName || u.username) : ('Leader ' + a.userId);
+              allSchedNames.push({ name: name, userId: a.userId });
+              seenIds[a.userId] = true;
+              leaderCount++;
+            }
+          });
+          if (leaderCount > 0) {
+            sourceReport.push('Review Leaders: ' + leaderCount);
+          }
+        }
+
         if (allSchedNames.length === 0) {
           alert('No reviewers found in any office schedule. Build schedules and assign names first.');
           return;

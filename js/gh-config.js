@@ -368,38 +368,45 @@
       if (!pw || pw.length < 4) { msg('gh-pick-msg', 'Password must be at least 4 characters.', false); return; }
       if (pw !== pw2) { msg('gh-pick-msg', 'Passwords do not match.', false); return; }
 
-      // Find and update user in stored users
-      var users = JSON.parse(localStorage.getItem('clerk_obs_users') || '[]');
-      var found = null;
-      for (var i = 0; i < users.length; i++) {
-        if (users[i].id === userId) {
-          users[i].password = pw;
-          users[i].mustChangePassword = false;
-          found = users[i];
-          break;
-        }
-      }
-      if (!found) { msg('gh-pick-msg', 'User not found. Try again.', false); return; }
-
-      // Save updated users list
-      localStorage.setItem('clerk_obs_users', JSON.stringify(users));
-
-      // Create session so Auth.currentUser() finds them after reload
-      localStorage.setItem('clerk_obs_session', JSON.stringify({
-        userId: found.id,
-        username: found.username,
-        displayName: found.displayName || found.username,
-        role: found.role,
-        loginAt: new Date().toISOString()
-      }));
-
-      msg('gh-pick-msg', 'Welcome, ' + (found.displayName || found.username) + '!', true);
       $('gh-btn-pick-go').disabled = true;
 
-      // Brief delay so they see the welcome, then redirect
-      setTimeout(function() {
-        window.location.href = 'index.html';
-      }, 800);
+      // Hash password with SHA-256
+      var enc = new TextEncoder().encode(pw);
+      crypto.subtle.digest('SHA-256', enc).then(function(buf) {
+        var hash = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+
+        // Find and update user in stored users
+        var users = JSON.parse(localStorage.getItem('clerk_obs_users') || '[]');
+        var found = null;
+        for (var i = 0; i < users.length; i++) {
+          if (users[i].id === userId) {
+            users[i].password = hash;
+            users[i].mustChangePassword = false;
+            found = users[i];
+            break;
+          }
+        }
+        if (!found) { msg('gh-pick-msg', 'User not found. Try again.', false); $('gh-btn-pick-go').disabled = false; return; }
+
+        // Save updated users list
+        localStorage.setItem('clerk_obs_users', JSON.stringify(users));
+
+        // Create session so Auth.currentUser() finds them after reload
+        localStorage.setItem('clerk_obs_session', JSON.stringify({
+          userId: found.id,
+          username: found.username,
+          displayName: found.displayName || found.username,
+          role: found.role,
+          loginAt: new Date().toISOString()
+        }));
+
+        msg('gh-pick-msg', 'Welcome, ' + (found.displayName || found.username) + '!', true);
+
+        // Brief delay so they see the welcome, then redirect
+        setTimeout(function() {
+          window.location.href = 'index.html';
+        }, 800);
+      });
     };
     $('gh-pick-pass2').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') $('gh-btn-pick-go').click();

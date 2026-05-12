@@ -474,7 +474,7 @@
               <p class="setup-subtitle">Type a last name to search. Select from the list or create a new account.</p>
               <div style="display:flex;gap:0.5rem;align-items:flex-end;position:relative;max-width:400px;">
                 <div style="flex:1;position:relative;">
-                  <input type="text" id="wb-assign-search" class="input-field" placeholder="Type last name..." autocomplete="off">
+                  <input type="text" id="wb-assign-search" class="input-field" placeholder="Type last name..." autocomplete="off" oninput="if(typeof window._wbAssignSearch==='function')window._wbAssignSearch()">
                   <div id="wb-assign-search-results" class="user-search-results" hidden></div>
                 </div>
                 <button id="wb-assign-add-btn" class="btn btn-primary btn-sm" style="white-space:nowrap;">+ Add</button>

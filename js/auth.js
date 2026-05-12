@@ -30,19 +30,9 @@ var Auth = (function() {
     var now = new Date().toISOString();
 
     if (users.length === 0) {
-      // First run: create admin account only
-      users.push({
-        id: crypto.randomUUID(),
-        username: 'admin',
-        password: 'admin',
-        displayName: 'Administrator',
-        role: 'admin',
-        assignedFins: [],
-        mustChangePassword: false,
-        createdAt: now
-      });
-      _saveUsers(users);
-      setSession(users[0]);
+      // First run: no default account. Show setup prompt.
+      // Admin must set up via the app's first-run wizard.
+      return;
     }
   }
 

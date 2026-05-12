@@ -1,0 +1,1174 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program — Review Notes</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="summary.html">Review Dashboard</a>
+      <a href="help.html">Help</a>
+    </div>
+  </nav>
+
+  <!-- Sticky Clock -->
+  <div class="sticky-clock" id="live-clock">--:--:--</div>
+
+  <main class="container">
+    <!-- Observation Info Bar -->
+    <section class="card obs-info-bar" id="obs-info-section">
+      <div class="obs-info-header">
+        <h2>Observation Info</h2>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span id="conn-status" class="conn-indicator conn-online">&#9679; Online</span>
+          <button id="toggle-info-btn" class="btn btn-outline btn-sm">Edit</button>
+        </div>
+      </div>
+      <div id="obs-info-display" class="obs-info-display">
+        <span class="info-chip"><strong>Office:</strong> <span id="disp-office">—</span></span>
+        <span class="info-chip"><strong>Date:</strong> <span id="disp-date">—</span></span>
+        <span class="info-chip"><strong>Day #:</strong> <span id="disp-day">—</span></span>
+        <span class="info-chip"><strong>Observer:</strong> <span id="disp-observer">—</span></span>
+        <span class="info-chip"><strong>Role:</strong> <span id="disp-role">—</span></span>
+        <span class="info-chip mh-only" hidden><strong>Employee:</strong> <span id="disp-employee">—</span></span>
+      </div>
+      <div id="obs-info-edit" class="obs-info-edit" hidden>
+        <div class="form-row">
+          <div class="form-group fg-2">
+            <label for="office">Office</label>
+            <input type="text" id="office">
+          </div>
+          <div class="form-group">
+            <label for="obs-date">Date</label>
+            <input type="date" id="obs-date" required>
+          </div>
+          <div class="form-group">
+            <label for="day-number">Day #</label>
+            <input type="text" id="day-number" placeholder="1 or 2">
+          </div>
+          <div class="form-group">
+            <label for="observer-name">Observer</label>
+            <input type="text" id="observer-name">
+          </div>
+          <div class="form-group mh-only" hidden>
+            <label for="employee-name">Employee Being Observed</label>
+            <input type="text" id="employee-name" placeholder="Employee name">
+          </div>
+        </div>
+        <button id="done-edit-btn" class="btn btn-primary btn-sm">Done</button>
+      </div>
+    </section>
+
+    <!-- MH Access Panel (shown for mailhandler reviewers who can request access to other MH employees) -->
+    <div id="mh-access-panel" class="card" hidden style="margin-bottom:0.5rem;">
+      <div class="section-header" style="cursor:pointer;" id="mh-access-toggle">
+        <h2 style="font-size:0.95rem;">📋 MH Employee Access</h2>
+        <span id="mh-access-badge" style="background:#fef3c7;color:#92400e;padding:0.1rem 0.45rem;border-radius:10px;font-size:0.72rem;font-weight:600;display:none;"></span>
+      </div>
+      <div id="mh-access-body" style="display:none;">
+        <p style="font-size:0.78rem;color:var(--text-light);margin:0 0 0.5rem;">Request access to follow additional MH employees. The assigned reviewer or a lead can approve your request.</p>
+        <div id="mh-access-list"></div>
+      </div>
+    </div>
+
+    <!-- Workbook Lead Mode Switcher (hidden by default, shown for lead role) -->
+    <!-- Review title bar (shown for leads) -->
+    <div id="wb-mode-bar" class="wb-mode-bar" hidden>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+        <h2 id="wb-review-title" style="margin:0;font-size:1.15rem;color:var(--text);"></h2>
+        <div id="wb-review-dates" style="display:none;align-items:center;gap:4px;font-size:0.78rem;">
+          <input type="date" id="wb-rev-start" style="padding:1px 4px;border:1px solid var(--border,#cbd5e1);border-radius:4px;font-size:0.75rem;background:var(--bg,#fff);color:var(--text);">
+          <span style="color:var(--text-light);">to</span>
+          <input type="date" id="wb-rev-end" style="padding:1px 4px;border:1px solid var(--border,#cbd5e1);border-radius:4px;font-size:0.75rem;background:var(--bg,#fff);color:var(--text);">
+        </div>
+        <div class="wb-mode-btns" id="wb-office-btns"></div>
+        <!-- Lead mode toggle -->
+        <div id="wb-lead-mode-toggle" style="margin-left:auto;display:flex;gap:0;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.8rem;">
+          <button id="wb-mode-manage" class="wb-lead-toggle wb-lead-toggle--active" title="Manage Review">📋 Manage</button>
+          <button id="wb-mode-notes" class="wb-lead-toggle" title="Switch to reviewer notes">📝 My Notes</button>
+        </div>
+      </div>
+      <!-- Phase toggle -->
+      <div class="wb-phase-bar" style="margin-top:0.5rem;">
+        <button class="wb-phase-btn wb-phase-btn--active" data-phase="pre-review"><span class="wb-phase-num">1</span> Pre-Review</button>
+        <div class="wb-phase-arrow">›</div>
+        <button class="wb-phase-btn" data-phase="review"><span class="wb-phase-num">2</span> Review</button>
+        <div class="wb-phase-arrow">›</div>
+        <button class="wb-phase-btn" data-phase="post-review"><span class="wb-phase-num">3</span> Post-Review</button>
+      </div>
+    </div>
+
+    <!-- Sub-tabs for different note sections -->
+    <!-- POD Day Toggle (shown for non-leads) -->
+    <div id="pod-day-toggle" style="display:flex;align-items:center;gap:0;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.8rem;margin-bottom:0.5rem;width:fit-content;" hidden>
+      <button class="pod-day-btn wb-lead-toggle wb-lead-toggle--active" data-day="1">Day 1</button>
+      <button class="pod-day-btn wb-lead-toggle" data-day="2">Day 2</button>
+    </div>
+
+    <!-- POD Phase Bar (shown for non-leads) -->
+    <div id="pod-phase-bar" class="wb-phase-bar" style="margin-bottom:0.5rem;" hidden>
+      <button class="pod-phase-btn wb-phase-btn" data-pod-phase="pod-pre" data-active="0"><span class="wb-phase-num">1</span> Pre-Review</button>
+      <div class="wb-phase-arrow">›</div>
+      <button class="pod-phase-btn wb-phase-btn wb-phase-btn--active" data-pod-phase="pod-review" data-active="1"><span class="wb-phase-num">2</span> Review</button>
+      <div class="wb-phase-arrow">›</div>
+      <button class="pod-phase-btn wb-phase-btn" data-pod-phase="pod-post" data-active="0"><span class="wb-phase-num">3</span> Post-Review</button>
+    </div>
+
+    <div class="review-tabs">
+      <button class="review-tab active" data-tab="tab-clerk-notes">Clerk Notes</button>
+      <button class="review-tab" data-tab="tab-mh-notes" hidden>Mail Handler Notes</button>
+      <button class="review-tab" data-tab="tab-ps3922">PS 3922</button>
+      <button class="review-tab" data-tab="tab-trips">Record Trips</button>
+      <button class="review-tab" data-tab="tab-scf">SCF Hub</button>
+      <button class="review-tab" data-tab="tab-adus">ADUS/SDUS</button>
+      <button class="review-tab" data-tab="tab-questionnaire">Questionnaire</button>
+      <button class="review-tab" data-tab="tab-summary-comments">Summarization</button>
+      <button class="review-tab" data-tab="tab-travel-survey" hidden>Travel Survey</button>
+      <button class="review-tab" data-tab="tab-schedules">Schedules</button>
+      <button class="review-tab eod-tab" data-tab="tab-endofday">End of Day</button>
+    </div>
+
+    <!-- POD Post-Review panel (expense confirmation for non-leads) -->
+    <div id="pod-post-review" hidden>
+      <section class="card">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+          <h2>Expense Report</h2>
+          <span id="pod-expense-deadline" style="font-size:0.82rem;color:var(--warning);font-weight:600;"></span>
+        </div>
+        <div style="padding:0.6rem 0.75rem;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+          <label style="cursor:pointer;font-size:0.88rem;display:flex;align-items:center;gap:0.4rem;margin:0;">
+            <input type="checkbox" id="pod-expense-check"> I have submitted my expense report
+          </label>
+          <button id="pod-expense-confirm" class="btn btn-primary btn-sm">Confirm</button>
+          <span id="pod-expense-status" style="font-size:0.82rem;"></span>
+        </div>
+      </section>
+    </div>
+
+
+
+    <!-- TAB: Workbook Lead Dashboard -->
+    <div id="tab-workbook" class="review-tab-panel">
+
+      <!-- WORKBOOK LEAD CONTENT (default) -->
+      <div id="wb-lead-content">
+
+        <!-- Sub-tabs: Pre-Review -->
+        <div class="wb-sub-tabs wb-phase-tabs" data-phase="pre-review">
+          <button class="wb-sub-tab wb-sub-tab--active" data-wbtab="wb-panel-calendar" data-role="teamlead">Information</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-roster">Office Schedule</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-schedule">Schedule</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-team">Assign Review Team</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-travel" data-role="teamlead">Travel</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-email">Schedule Email</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-finalize" data-role="teamlead">Finalize ✓</button>
+        </div>
+
+        <!-- Sub-tabs: Review -->
+        <div class="wb-sub-tabs wb-phase-tabs" data-phase="review" style="display:none;">
+          <button class="wb-sub-tab wb-sub-tab--active" data-wbtab="wb-panel-tacs">TACS Data</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-csaw-dut">CSAW / DUT</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-questionnaire">Questionnaire</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-timelines">Timelines</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-status">Status</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-mynotes">My Notes</button>
+        </div>
+
+        <!-- Sub-tabs: Post-Review -->
+        <div class="wb-sub-tabs wb-phase-tabs" data-phase="post-review" style="display:none;">
+          <button class="wb-sub-tab wb-sub-tab--active" data-wbtab="wb-panel-expense">Expense Report</button>
+          <button class="wb-sub-tab" data-wbtab="wb-panel-workbook-review">Workbook Review</button>
+        </div>
+
+        <!-- SUB-PANEL: Workbook Review (Lead only) -->
+        <div id="wb-panel-workbook-review" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>📋 Function 4 Workbook Review</h2></div>
+            <p class="setup-subtitle">Upload the completed Function 4 review workbook directly and track the review process.</p>
+
+            <!-- Upload Section (lead only) -->
+            <div id="wbr-upload-section">
+              <div id="wbr-upload-area" style="margin-bottom:1rem;">
+                <div id="wbr-no-file">
+                  <label style="font-weight:600;font-size:0.9rem;display:block;margin-bottom:0.35rem;">Upload Workbook</label>
+                  <div id="wbr-dropzone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;">
+                    <div style="font-size:2rem;margin-bottom:0.5rem;">📁</div>
+                    <p style="font-size:0.9rem;font-weight:600;margin-bottom:0.25rem;">Drag & drop your workbook here</p>
+                    <p style="font-size:0.78rem;color:var(--text-light);">or click to browse — supports .xlsx, .xlsb, .xls, .csv</p>
+                    <input type="file" id="wbr-file-input" accept=".xlsx,.xlsb,.xls,.csv" style="display:none;">
+                  </div>
+                  <div id="wbr-upload-progress" style="display:none;margin-top:0.5rem;">
+                    <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+                      <div id="wbr-progress-bar" style="height:100%;width:0%;background:var(--primary);transition:width 0.3s;border-radius:3px;"></div>
+                    </div>
+                    <p id="wbr-progress-text" style="font-size:0.78rem;color:var(--text-light);margin-top:0.25rem;">Reading file…</p>
+                  </div>
+                </div>
+                <div id="wbr-file-info" style="display:none;padding:0.75rem;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);">
+                  <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                    <span style="font-size:1.2rem;">📊</span>
+                    <div style="min-width:0;flex:1;">
+                      <div id="wbr-file-name" style="font-weight:600;font-size:0.9rem;"></div>
+                      <div id="wbr-file-date" style="font-size:0.78rem;color:var(--text-light);"></div>
+                      <div id="wbr-file-size" style="font-size:0.78rem;color:var(--text-light);"></div>
+                    </div>
+                    <button id="wbr-download-btn" class="btn btn-primary btn-sm">⬇ Download</button>
+                    <button id="wbr-replace-btn" class="btn btn-outline btn-sm">Replace File</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Review Status Tracker -->
+              <div id="wbr-status-tracker" style="margin-bottom:1rem;">
+                <h3 style="margin-bottom:0.5rem;font-size:1rem;">Review Status</h3>
+                <div style="display:flex;gap:0;align-items:stretch;">
+                  <div id="wbr-step-submitted" class="wbr-step">
+                    <div class="wbr-step-icon">1</div>
+                    <div class="wbr-step-label">Workbook Uploaded</div>
+                  </div>
+                  <div class="wbr-step-arrow">→</div>
+                  <div id="wbr-step-reviewed" class="wbr-step">
+                    <div class="wbr-step-icon">2</div>
+                    <div class="wbr-step-label">Review Lead Reviewed</div>
+                  </div>
+                  <div class="wbr-step-arrow">→</div>
+                  <div id="wbr-step-final" class="wbr-step">
+                    <div class="wbr-step-icon">✓</div>
+                    <div class="wbr-step-label">Approved</div>
+                  </div>
+                </div>
+                <div id="wbr-status-msg" style="margin-top:0.5rem;font-size:0.85rem;"></div>
+              </div>
+
+              <!-- Lead actions -->
+              <div id="wbr-lead-actions" style="display:none;gap:0.5rem;flex-wrap:wrap;">
+                <button id="wbr-mark-reviewed" class="btn btn-outline btn-sm" style="display:none;">Mark as Reviewed</button>
+                <button id="wbr-approve-btn" class="btn btn-sm" style="background:#22c55e;color:#fff;border:none;display:none;">✓ Approve</button>
+                <button id="wbr-return-btn" class="btn btn-outline btn-sm" style="color:#ef4444;border-color:#ef4444;display:none;">↩ Send Back</button>
+                <button id="wbr-reset-btn" class="btn btn-outline btn-sm" style="color:#6b7280;border-color:#6b7280;display:none;margin-left:auto;">⟲ Reset Status</button>
+              </div>
+              <div id="wbr-return-note" style="display:none;margin-top:0.5rem;padding:0.6rem 0.75rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:0.85rem;color:#991b1b;">
+                <strong>Returned:</strong> <span id="wbr-return-reason"></span>
+              </div>
+              <span id="wbr-submit-status" style="margin-left:0.5rem;font-size:0.85rem;"></span>
+            </div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: Expense Report -->
+        <div id="wb-panel-expense" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+              <h2>Expense Report</h2>
+              <span id="expense-deadline" style="font-size:0.82rem;color:var(--warning);font-weight:600;"></span>
+            </div>
+
+            <!-- Lead rollup (compact) -->
+            <div id="expense-lead-section" style="display:none;margin-bottom:1rem;">
+              <div id="expense-lead-summary" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;font-size:0.82rem;"></div>
+              <div id="expense-rollup"></div>
+              <button id="expense-reminder-btn" class="btn btn-outline btn-sm" style="margin-top:0.5rem;">📧 Remind Pending</button>
+            </div>
+
+            <!-- Self confirmation (inline) -->
+            <div id="expense-pod-section" style="padding:0.6rem 0.75rem;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <label style="cursor:pointer;font-size:0.88rem;display:flex;align-items:center;gap:0.4rem;margin:0;">
+                <input type="checkbox" id="expense-submitted-check"> I have submitted my expense report
+              </label>
+              <button id="expense-confirm-btn" class="btn btn-primary btn-sm">Confirm</button>
+              <span id="expense-confirm-status" style="font-size:0.82rem;"></span>
+            </div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: My Notes (Lead Day 1 / Day 2) -->
+        <div id="wb-panel-mynotes" class="wb-sub-panel">
+          <!-- Current office indicator -->
+          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;margin-bottom:0.75rem;padding:0.5rem 0.75rem;background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);">
+            <span style="font-size:0.82rem;font-weight:600;color:var(--text-light);">Current Office:</span>
+            <span id="wb-mynotes-office" style="font-size:0.88rem;font-weight:700;">—</span>
+          </div>
+
+          <!-- My Clerk Notes -->
+          <section class="card">
+            <div class="section-header"><h2>📝 My Clerk Notes</h2></div>
+            <p class="setup-subtitle">Your own observation notes for the selected office.</p>
+            <div id="wb-mynotes-status" style="margin-bottom:0.75rem;"></div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+              <button id="wb-mynotes-day1" class="btn btn-primary btn-sm">Start Day 1</button>
+              <button id="wb-mynotes-day2" class="btn btn-outline btn-sm">Start Day 2</button>
+            </div>
+          </section>
+
+          <!-- All Clerk Notes by Reviewer -->
+          <section class="card" style="margin-top:0.75rem;">
+            <div class="section-header"><h2>👥 Clerk Notes by Reviewer</h2></div>
+            <p class="setup-subtitle">All clerk observations across every reviewer for this review. Click to view.</p>
+            <div id="wb-mynotes-clerk-list"></div>
+            <div id="wb-mynotes-clerk-empty" class="empty-state">No clerk observations found yet.</div>
+          </section>
+
+          <!-- MH Notes by Employee -->
+          <section id="wb-mynotes-mh-section" class="card" style="margin-top:0.75rem;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <h2>🔧 Mail Handler Notes</h2>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <select id="wb-mynotes-mh-select" class="form-control" style="font-size:0.82rem;padding:0.3rem 0.5rem;min-width:160px;">
+                  <option value="">— Start new MH —</option>
+                </select>
+                <button id="wb-mynotes-mh-go" class="btn btn-outline btn-sm" disabled>Start</button>
+              </div>
+            </div>
+            <p class="setup-subtitle">View or take over MH observations by employee. Notes persist across reviewers.</p>
+            <div id="wb-mynotes-mh-list"></div>
+            <div id="wb-mynotes-mh-empty" class="empty-state">No MH observations started yet. Select a mail handler above to begin.</div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: Timelines (Lead Rollup) -->
+        <div id="wb-panel-timelines" class="wb-sub-panel">
+          <section class="card">
+            <h2>Observation Timelines</h2>
+            <p class="setup-subtitle">Overlapping timelines for all reviewers. Filter by craft or reviewer.</p>
+
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center;">
+              <label style="font-size:0.85rem;font-weight:600;">Craft:</label>
+              <select id="rollup-craft-filter" style="padding:0.3rem 0.5rem;border-radius:4px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);">
+                <option value="clerk">Clerk</option>
+                <option value="mh">Mail Handler</option>
+              </select>
+              <label style="font-size:0.85rem;font-weight:600;">Day:</label>
+              <select id="rollup-day-filter" style="padding:0.3rem 0.5rem;border-radius:4px;border:1px solid var(--bg-input);background:var(--bg-input);color:var(--text);">
+                <option value="1">Day 1</option>
+                <option value="2">Day 2</option>
+              </select>
+              <label style="font-size:0.85rem;font-weight:600;">Reviewer:</label>
+              <select id="rollup-reviewer-filter" style="padding:0.3rem 0.5rem;border-radius:4px;border:1px solid var(--bg-input);background:var(--bg-input);color:var(--text);">
+                <option value="all">All</option>
+              </select>
+              <button id="rollup-refresh-btn" class="btn btn-primary btn-sm">Refresh</button>
+            </div>
+
+            <div id="rollup-timeline-container"></div>
+            <div id="rollup-timeline-legend" class="timeline-legend" style="margin-top:0.5rem;"></div>
+            <div id="rollup-empty" class="empty-state">Select a craft and day, then click Refresh.</div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: Reviewer Status -->
+        <div id="wb-panel-status" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <h2>Reviewer Status</h2>
+              <button id="wb-refresh-status" class="btn btn-primary btn-sm">Refresh</button>
+            </div>
+            <p class="setup-subtitle">Shows submission status for all reviewers assigned to this review.</p>
+            <div id="wb-reviewer-status"></div>
+            <div id="wb-reviewer-empty" class="empty-state">Click "Refresh" to load reviewer status.</div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: TACS Data (Clerk + MH combined) -->
+        <div id="wb-panel-tacs" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>TACS Clock Rings</h2></div>
+            <p class="setup-subtitle">Upload the TACS CSV export. Clerks and Mail Handlers are auto-detected by matching against the Office Schedule (D/A code). Employees on the clock but not on the roster will be flagged.</p>
+            <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;">
+              <label class="btn btn-primary btn-sm" style="cursor:pointer;margin:0;">
+                Upload TACS CSV
+                <input type="file" id="wb-tacs-csv" accept=".csv,.txt,.tsv" hidden>
+              </label>
+              <button id="wb-tacs-clear" class="btn btn-outline btn-sm">Clear</button>
+            </div>
+            <div id="wb-tacs-output"></div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: CSAW / DUT combined -->
+        <div id="wb-panel-csaw-dut" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>CSAW Earned Hours</h2></div>
+            <table class="wb-csaw-compact">
+              <thead><tr><th></th><th>41</th><th>42</th><th>43A</th><th>43P</th><th>43L</th><th>43F</th><th>44</th><th>45</th><th>48</th></tr></thead>
+              <tbody>
+                <tr><td class="wb-csaw-row-label">Day 1</td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="41" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="42" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="43A" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="43P" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="43L" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="43F" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="44" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="45" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="1" data-ldc="48" value="0"></td></tr>
+                <tr><td class="wb-csaw-row-label">Day 2</td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="41" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="42" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="43A" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="43P" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="43L" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="43F" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="44" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="45" value="0"></td><td><input type="text" inputmode="decimal" class="wb-csaw-input" data-day="2" data-ldc="48" value="0"></td></tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="card" style="margin-top:1rem;">
+            <div class="section-header"><h2>DUT / POBUT</h2></div>
+            <table class="wb-dut-compact">
+              <thead><tr><th></th><th>DUT</th><th>POBUT</th></tr></thead>
+              <tbody>
+                <tr><td class="wb-csaw-row-label">Day 1</td><td><input type="text" id="wb-dut-d1" placeholder="" class="wb-dut-input-sm"></td><td><input type="text" id="wb-pobut-d1" placeholder="" class="wb-dut-input-sm"></td></tr>
+                <tr><td class="wb-csaw-row-label">Day 2</td><td><input type="text" id="wb-dut-d2" placeholder="" class="wb-dut-input-sm"></td><td><input type="text" id="wb-pobut-d2" placeholder="" class="wb-dut-input-sm"></td></tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: Employee Roster -->
+        <div id="wb-panel-roster" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>Office Schedule</h2></div>
+
+            <p class="setup-subtitle">Go to <a href="https://webcoins.usps.gov/ords/coinsnp/coins_start" target="_blank" style="color:var(--primary);">WebCOINS</a> → Employee/Job List → select Area, District, and Office. Click "Criteria Selection" → Select "4-Cust Serv" under Function. Select "Advanced Options" tab, then ensure all items listed in the heading row are added to the selection field to the right while keeping all current selections <strong>(Add: Employee Pay Level, Non-Scheduled Days, Seniority Date, Seniority Number, and Start Times)</strong>. Execute then export to Excel (.xls).</p>
+            <div style="margin-top:0.75rem;margin-bottom:0.5rem;">
+              <label style="font-weight:600;display:block;margin-bottom:0.4rem;">Upload Office Schedule Export (.xls)</label>
+              <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:0.4rem;">File is parsed and discarded — not stored.</p>
+              <input type="file" id="wb-roster-csv" style="font-size:0.85rem;">
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+              <button id="wb-roster-clear" class="btn btn-outline btn-sm">Clear Roster</button>
+            </div>
+            <div id="wb-roster-output"></div>
+          </section>
+
+          <!-- Clock Ring Analysis -->
+          <section class="card" style="margin-top:1rem;">
+            <div class="section-header"><h2>Clock Ring Analysis</h2></div>
+            <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:0.75rem;">Upload a <a href="https://blue.usps.gov/tacs/" target="_blank" rel="noopener" style="color:#2563eb;font-weight:600;">TACS</a> clock ring CSV export to compare actual Begin Tour (BT) times against the scheduled start times. Deviations of <strong>±15 minutes</strong> or more are flagged. Note: File is not saved.</p>
+            <input type="file" id="wb-clockring-csv" accept=".csv,.txt" style="font-size:0.85rem;">
+            <div id="wb-clockring-output" style="margin-top:0.75rem;"></div>
+          </section>
+        </div>
+        </div>
+
+        <!-- SUB-PANEL: Schedule -->
+        <div id="wb-panel-schedule" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <h2>Review Schedule</h2>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <button id="wb-sched-generate" class="btn btn-primary btn-sm">Build Schedule</button>
+                <label id="wb-sched-bt-toggle-wrap" style="display:none;font-size:0.78rem;gap:0.3rem;align-items:center;cursor:pointer;user-select:none;" title="Toggle between roster bid times and actual clock ring begin tours">
+                  <span style="color:var(--text-light);">Bid</span>
+                  <input type="checkbox" id="wb-sched-bt-toggle" style="margin:0;">
+                  <span style="color:var(--text-light);">Actual BT</span>
+                </label>
+                <button id="wb-sched-add-row" class="btn btn-outline btn-sm">+ Add Reviewer</button>
+                <button id="wb-sched-reset" class="btn btn-danger btn-sm">Reset</button>
+              </div>
+            </div>
+            <p class="setup-subtitle">Builds a recommended schedule from the Office Schedule start times. Reviewers arrive 10 min before employee start.</p>
+            <div id="wb-sched-output"></div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: Assign Review Team -->
+        <div id="wb-panel-team" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>Assign Review Team</h2></div>
+            <div id="wb-sched-assign">
+              <p class="setup-subtitle">Type a last name to search. Select from the list or create a new account.</p>
+              <div style="display:flex;gap:0.5rem;align-items:flex-end;position:relative;max-width:400px;">
+                <div style="flex:1;position:relative;">
+                  <input type="text" id="wb-assign-search" class="input-field" placeholder="Type last name..." autocomplete="off">
+                  <div id="wb-assign-search-results" class="user-search-results" hidden></div>
+                </div>
+                <button id="wb-assign-add-btn" class="btn btn-primary btn-sm" style="white-space:nowrap;">+ Add</button>
+              </div>
+              <div id="wb-assign-create-wrap" hidden style="margin:0.5rem 0;padding:0.6rem;border:1px dashed var(--border);border-radius:var(--radius);background:var(--card-bg);">
+                <p style="font-size:0.82rem;margin:0 0 0.4rem;color:var(--text-light);">Create a new reviewer account:</p>
+                <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:120px;"><label style="font-size:0.75rem;">First Name</label><input type="text" id="wb-assign-new-first" class="input-field" placeholder="John"></div>
+                  <div style="flex:1;min-width:120px;"><label style="font-size:0.75rem;">Last Name</label><input type="text" id="wb-assign-new-last" class="input-field" placeholder="Smith"></div>
+                  <div style="flex:1;min-width:160px;"><label style="font-size:0.75rem;">Email</label><input type="email" id="wb-assign-new-email" class="input-field" placeholder="user@usps.gov"></div>
+                  <button id="wb-assign-new-create-btn" class="btn btn-primary btn-sm">Create &amp; Add</button>
+                </div>
+                <p style="font-size:0.7rem;margin:0.3rem 0 0;color:var(--text-light);">Account will be created as <strong>LAST, FIRST</strong>. Default password: <code>last,first</code> (lowercase).</p>
+              </div>
+              <div id="wb-assign-tags" class="fin-tags" style="margin-top:0.5rem;"></div>
+              <div id="wb-assign-output"></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: Information -->
+        <div id="wb-panel-calendar" class="wb-sub-panel wb-sub-panel--active">
+          <!-- Overall Calendar -->
+          <section class="card">
+            <div class="section-header"><h2>Review Calendar</h2></div>
+            <p class="setup-subtitle">Overall review timeline and key dates across all offices.</p>
+            <div id="wb-calendar-container"></div>
+            <div id="wb-calendar-milestones"></div>
+          </section>
+
+          <!-- Documents — All Offices -->
+          <section class="card" style="margin-top:1rem;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+              <h2>Documents</h2>
+              <button id="wb-doc-add-type" class="btn btn-outline btn-sm" style="font-size:0.75rem;">+ Add Document Type</button>
+            </div>
+            <p class="setup-subtitle">Upload reference documents per office. Supports PDF, Word, Excel, and images — no size limits.</p>
+            <div id="wb-doc-container"></div>
+          </section>
+
+          <!-- Document Viewer -->
+          <div id="wb-doc-viewer-section" hidden style="margin-top:1rem;">
+            <section class="card">
+              <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h2 id="wb-doc-viewer-title">Document Viewer</h2>
+                <button id="wb-doc-viewer-close" class="btn btn-outline btn-sm">✕ Close</button>
+              </div>
+              <iframe id="wb-doc-viewer-frame" style="width:100%;height:600px;border:none;border-radius:4px;"></iframe>
+            </section>
+          </div>
+        </div>
+
+        <!-- SUB-PANEL: Travel -->
+        <div id="wb-panel-travel" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>Travel Survey</h2></div>
+            <p class="setup-subtitle">Assign reviewers to complete their travel survey, then view responses and build carpool groups.</p>
+
+            <!-- Hotel Booking Link (optional) -->
+            <div class="travel-section" style="padding-bottom:0.75rem;">
+              <label style="font-weight:600;font-size:0.9rem;display:block;margin-bottom:0.35rem;">🏨 Hotel Booking Link <span style="font-weight:400;color:var(--text-light);font-size:0.8rem;">(optional)</span></label>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input id="wb-travel-hotel-link" type="url" class="input-field" style="font-size:0.85rem;flex:1;max-width:500px;" placeholder="Paste hotel booking URL..." autocomplete="off">
+                <button id="wb-travel-hotel-link-save" class="btn btn-primary btn-sm">Save</button>
+                <span id="wb-travel-hotel-link-status" style="font-size:0.8rem;"></span>
+              </div>
+            </div>
+
+            <!-- Assign Travelers -->
+            <div class="travel-section">
+              <h3 class="travel-section-heading">Assigned Travelers</h3>
+              <p class="setup-subtitle">Imported from the Schedule tab. Add or remove individually below.</p>
+              <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+                <button id="wb-travel-import-btn" class="btn btn-primary btn-sm">Import from Schedule</button>
+                <div style="flex:1;min-width:180px;max-width:280px;position:relative;">
+                  <input id="wb-travel-assign-input" type="text" class="input-field" style="font-size:0.85rem;" placeholder="Type a name to add..." autocomplete="off">
+                  <div id="wb-travel-assign-results" class="travel-autocomplete-results"></div>
+                </div>
+              </div>
+              <div id="wb-travel-assigned-list" style="margin-top:0.5rem;"></div>
+            </div>
+
+            <!-- Rollup / Status -->
+            <div class="travel-section">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <h3 class="travel-section-heading" style="margin:0;">Response Status</h3>
+                <button id="wb-travel-reminder-btn" class="btn btn-outline btn-sm">📧 Send Reminder</button>
+              </div>
+              <div id="wb-travel-rollup"></div>
+            </div>
+
+            <!-- Pickup / Dropoff Groups -->
+            <div class="travel-section" style="margin-bottom:0;">
+              <h3 class="travel-section-heading">Travel Plan</h3>
+              <p class="setup-subtitle">Assign who's picking up and dropping off each flyer — a driver or Uber Pool.</p>
+              <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+                <button id="wb-travel-autogroup" class="btn btn-outline btn-sm">Auto-Group</button>
+              </div>
+              <div id="wb-travel-groups"></div>
+            </div>
+          </section>
+        </div>
+
+
+
+        <!-- SUB-PANEL: Email -->
+        <div id="wb-panel-email" class="wb-sub-panel">
+
+          <!-- SCHEDULE BUILDER -->
+          <div id="wb-email-schedule">
+            <section class="card">
+              <div class="section-header"><h2>Email Schedule Builder</h2></div>
+              <p class="setup-subtitle">Build and send the team schedule with travel logistics.</p>
+
+              <!-- Link Reviews (Trip) -->
+              <div style="margin-bottom:0.75rem;padding:0.6rem;background:var(--bg-light);border-radius:6px;border:1px solid var(--border);">
+                <label style="font-size:0.78rem;font-weight:600;display:block;margin-bottom:0.3rem;">Link Additional Reviews <span style="font-weight:400;color:var(--text-light);">(multi-office trip)</span></label>
+                <div id="wb-link-reviews"></div>
+              </div>
+
+              <!-- Schedule Type Selector -->
+              <div style="margin-bottom:0.5rem;">
+                <label style="font-size:0.78rem;font-weight:600;margin-right:0.4rem;">Schedule View:</label>
+                <select id="wb-share-type" style="font-size:0.78rem;padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);">
+                  <option value="review">Review Schedule</option>
+                  <option value="trips">Daily Trips to Office</option>
+                  <option value="airport">Airport Schedule</option>
+                </select>
+              </div>
+
+              <!-- Review Schedule Email -->
+              <div id="wb-email-review" class="wb-email-section">
+                <div id="wb-card-review" style="margin-bottom:0.5rem;"></div>
+                <div style="padding:0.5rem;background:var(--bg-light);border-radius:6px;border:1px solid var(--border);">
+                  <p style="font-size:0.82rem;margin:0 0 0.3rem 0;font-weight:600;">📧 Review Schedule Email</p>
+                  <p style="font-size:0.72rem;color:var(--text-light);margin:0 0 0.3rem 0;">Snip the card above (<kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:0.7rem;">Win+Shift+S</kbd>) and paste into the email.</p>
+                  <div style="display:flex;gap:0.5rem;margin-bottom:0.3rem;">
+                    <div style="flex:1;"><label style="font-size:0.72rem;font-weight:600;">To <span style="font-weight:400;color:var(--text-light);">(Reviewers)</span></label>
+                    <textarea id="wb-email-review-to" class="notes-input" rows="1" placeholder="reviewer1@usps.gov; reviewer2@usps.gov" style="font-size:0.75rem;"></textarea></div>
+                    <div style="flex:1;"><label style="font-size:0.72rem;font-weight:600;">CC <span style="font-weight:400;color:var(--text-light);">(Leadership)</span></label>
+                    <textarea id="wb-email-review-cc" class="notes-input" rows="1" placeholder="lead@usps.gov; teamlead@usps.gov" style="font-size:0.75rem;"></textarea></div>
+                  </div>
+                  <label style="font-size:0.72rem;font-weight:600;">Message</label>
+                  <textarea id="wb-email-review-msg" class="notes-input" rows="3" placeholder="Good day, team!&#10;&#10;Below is the schedule for the upcoming Function 4 Review. Please review your assignment and arrival times.&#10;&#10;[Paste screenshot here]" style="font-size:0.75rem;"></textarea>
+                  <button id="wb-email-review-send" class="btn btn-primary btn-sm" style="margin-top:0.3rem;">📧 Open in Outlook</button>
+                </div>
+              </div>
+
+              <!-- Daily Trips Email -->
+              <div id="wb-email-trips" class="wb-email-section" style="display:none;">
+                <div id="wb-card-trips" style="margin-bottom:0.5rem;"></div>
+                <div style="padding:0.5rem;background:var(--bg-light);border-radius:6px;border:1px solid var(--border);">
+                  <p style="font-size:0.82rem;margin:0 0 0.3rem 0;font-weight:600;">📧 Daily Trips Email</p>
+                  <p style="font-size:0.72rem;color:var(--text-light);margin:0 0 0.3rem 0;">Snip the card above (<kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:0.7rem;">Win+Shift+S</kbd>) and paste into the email.</p>
+                  <div style="display:flex;gap:0.5rem;margin-bottom:0.3rem;">
+                    <div style="flex:1;"><label style="font-size:0.72rem;font-weight:600;">To <span style="font-weight:400;color:var(--text-light);">(Reviewers)</span></label>
+                    <textarea id="wb-email-trips-to" class="notes-input" rows="1" placeholder="reviewer1@usps.gov; reviewer2@usps.gov" style="font-size:0.75rem;"></textarea></div>
+                    <div style="flex:1;"><label style="font-size:0.72rem;font-weight:600;">CC <span style="font-weight:400;color:var(--text-light);">(Leadership)</span></label>
+                    <textarea id="wb-email-trips-cc" class="notes-input" rows="1" placeholder="lead@usps.gov; teamlead@usps.gov" style="font-size:0.75rem;"></textarea></div>
+                  </div>
+                  <label style="font-size:0.72rem;font-weight:600;">Message</label>
+                  <textarea id="wb-email-trips-msg" class="notes-input" rows="3" placeholder="Good day, team!&#10;&#10;Below are the daily transportation groups. Please coordinate with your group to arrive at the office by your designated time.&#10;&#10;[Paste screenshot here]" style="font-size:0.75rem;"></textarea>
+                  <button id="wb-email-trips-send" class="btn btn-primary btn-sm" style="margin-top:0.3rem;">📧 Open in Outlook</button>
+                </div>
+              </div>
+
+              <!-- Airport Schedule Email -->
+              <div id="wb-email-airport" class="wb-email-section" style="display:none;">
+                <div id="wb-card-airport" style="margin-bottom:0.5rem;"></div>
+                <div style="padding:0.5rem;background:var(--bg-light);border-radius:6px;border:1px solid var(--border);">
+                  <p style="font-size:0.82rem;margin:0 0 0.3rem 0;font-weight:600;">📧 Airport Schedule Email</p>
+                  <p style="font-size:0.72rem;color:var(--text-light);margin:0 0 0.3rem 0;">Snip the card above (<kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:0.7rem;">Win+Shift+S</kbd>) and paste into the email.</p>
+                  <div style="display:flex;gap:0.5rem;margin-bottom:0.3rem;">
+                    <div style="flex:1;"><label style="font-size:0.72rem;font-weight:600;">To <span style="font-weight:400;color:var(--text-light);">(Reviewers)</span></label>
+                    <textarea id="wb-email-airport-to" class="notes-input" rows="1" placeholder="reviewer1@usps.gov; reviewer2@usps.gov" style="font-size:0.75rem;"></textarea></div>
+                    <div style="flex:1;"><label style="font-size:0.72rem;font-weight:600;">CC <span style="font-weight:400;color:var(--text-light);">(Leadership)</span></label>
+                    <textarea id="wb-email-airport-cc" class="notes-input" rows="1" placeholder="lead@usps.gov; teamlead@usps.gov" style="font-size:0.75rem;"></textarea></div>
+                  </div>
+                  <label style="font-size:0.72rem;font-weight:600;">Message</label>
+                  <textarea id="wb-email-airport-msg" class="notes-input" rows="3" placeholder="Good day, team!&#10;&#10;Below is the airport pickup/dropoff schedule. Please confirm your flight details and arrival times.&#10;&#10;[Paste screenshot here]" style="font-size:0.75rem;"></textarea>
+                  <button id="wb-email-airport-send" class="btn btn-primary btn-sm" style="margin-top:0.3rem;">📧 Open in Outlook</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+        </div>
+
+        <!-- SUB-PANEL: Questionnaire (full - all LDCs, no restrictions) -->
+        <div id="wb-panel-questionnaire" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>Questionnaire</h2></div>
+            <p class="setup-subtitle">All observation questions — answer any that apply to this review.</p>
+            <div id="wb-questionnaire-sections"></div>
+          </section>
+        </div>
+
+        <!-- SUB-PANEL: Finalize Pre-Review Checklist -->
+        <div id="wb-panel-finalize" class="wb-sub-panel">
+          <section class="card">
+            <div class="section-header"><h2>Pre-Review Checklist</h2></div>
+            <p class="setup-subtitle">Verify all required items are complete before the review begins. Click any flagged item to jump to it.</p>
+            <div id="wb-finalize-output"></div>
+            <button id="wb-finalize-refresh" class="btn btn-primary btn-sm" style="margin-top:0.75rem;">Run Checklist</button>
+          </section>
+        </div>
+
+      </div><!-- /wb-lead-content -->
+
+    </div>
+
+    <!-- TAB: Clerk Notes (main observation sheet) -->
+    <div id="tab-clerk-notes" class="review-tab-panel active">
+      <section class="card">
+        <div class="section-header"><h2>Time Entries</h2></div>
+        <div id="rows-container"></div>
+        <p id="no-rows-msg" class="empty-state">No rows yet. Click "+ Add Row" to start logging.</p>
+      </section>
+
+      <section class="card save-section" style="justify-content:flex-end;">
+        <span id="clerk-autosave-status" style="font-size:0.78rem;color:var(--text-light);"></span>
+      </section>
+    </div>
+
+    <!-- TAB: Mail Handler Notes -->
+    <div id="tab-mh-notes" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header"><h2>Mail Handler Time Entries</h2></div>
+        <div id="mh-rows-container"></div>
+        <p id="mh-no-rows-msg" class="empty-state">No rows yet. Click "+ Add Row" to start logging.</p>
+      </section>
+
+      <section class="card save-section" style="justify-content:flex-end;">
+        <span id="mh-autosave-status" style="font-size:0.78rem;color:var(--text-light);"></span>
+      </section>
+    </div>
+
+    <!-- TAB: PS 3922 -->
+    <div id="tab-ps3922" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>PS Form 3922 — Volume Recording</h2>
+        </div>
+        <p class="setup-subtitle">Customer Services Volume Recording Worksheet. Create one sheet per zone.</p>
+
+        <!-- Zone tabs -->
+        <div class="ps3922-zone-bar">
+          <div id="ps3922-zone-tabs" class="ps3922-zone-tabs"></div>
+          <div class="ps3922-add-zone">
+            <input type="text" id="ps3922-new-zone" placeholder="Zone name (e.g. ALL ZONES)" maxlength="30" style="width:140px;">
+            <button id="ps3922-add-zone-btn" class="btn btn-primary btn-sm">+ Add Zone</button>
+          </div>
+        </div>
+
+        <!-- Active zone worksheet (fully JS-rendered) -->
+        <div id="ps3922-worksheet" class="ps3922-worksheet" hidden>
+          <div class="ps3922-info-row">
+            <span><strong>Zone:</strong> <span id="ps3922-zone-name"></span></span>
+            <button id="ps3922-delete-zone-btn" class="btn btn-danger btn-sm">Delete Zone</button>
+          </div>
+
+          <div class="ps3922-table-wrap" id="ps3922-table-container"></div>
+
+          <!-- PO Box DPS -->
+          <div class="ps3922-dps-row card" style="margin-top:1rem;padding:0.75rem 1rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <label style="font-weight:600;font-size:0.88rem;white-space:nowrap;">PO Box DPS:</label>
+              <input type="number" id="ps3922-dps-input" min="0" step="1" placeholder="Enter DPS count" style="width:140px;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.85rem;background:var(--bg);color:var(--text);">
+              <a href="https://cpc.usps.gov/cpcWeb/" target="_blank" rel="noopener" style="font-size:0.82rem;color:var(--primary);text-decoration:underline;">Look up DPS on CPC &rarr;</a>
+            </div>
+          </div>
+
+          <!-- Piece Conversion Totals -->
+          <div class="ps3922-conversion card" style="margin-top:1rem;padding:0.75rem 1rem;">
+            <h4 style="margin-bottom:0.5rem;font-size:0.9rem;">Piece Conversion — Totals</h4>
+            <div class="ps3922-conv-grid">
+              <div class="ps3922-conv-item">
+                <span class="ps3922-conv-label">Letters</span>
+                <span class="ps3922-conv-value" id="ps3922-conv-ltrs">0 pcs</span>
+                <span class="ps3922-conv-note">221 per 12 in</span>
+              </div>
+              <div class="ps3922-conv-item">
+                <span class="ps3922-conv-label">Flats</span>
+                <span class="ps3922-conv-value" id="ps3922-conv-flts">0 pcs</span>
+                <span class="ps3922-conv-note">115 per 12 in</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-light);">
+            <span id="ps3922-autosave-status"></span>
+          </div>
+        </div>
+
+        <div id="ps3922-empty" class="empty-state">No zones created yet. Add a zone above to start recording volumes.</div>
+      </section>
+    </div>
+
+    <!-- TAB: Record Trips -->
+    <div id="tab-trips" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>Trip Container Recording</h2>
+          <button id="trips-add-btn" class="btn btn-primary btn-sm">+ Add Trip</button>
+        </div>
+        <p class="setup-subtitle">Record container counts per trip. On Hand is always first. Use + Add Trip for each truck arrival.</p>
+        <div id="trips-cards-container"></div>
+        <div id="trips-empty" class="empty-state">On Hand card will appear automatically. Click "+ Add Trip" to add truck arrivals.</div>
+        <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-light);">
+          <span id="trips-autosave-status"></span>
+        </div>
+      </section>
+
+      <!-- Mail Flow & Containers Notes -->
+      <section class="card" style="margin-top:1rem;">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>Notes — Mail Flow &amp; Containers</h2>
+          <button id="mailflow-add-btn" class="btn btn-primary btn-sm">+ Add Note</button>
+        </div>
+        <p class="setup-subtitle">Document issues with mail flow and containers by trip.</p>
+        <div id="mailflow-notes-container"></div>
+        <div id="mailflow-empty" class="empty-state">No notes yet. Click "+ Add Note" to log an observation.</div>
+      </section>
+    </div>
+
+    <!-- TAB: SCF Hub -->
+    <div id="tab-scf" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header"><h2>SCF Hub Worksheet</h2></div>
+        <p class="setup-subtitle">Track SCF tasks, HCR Seals, and operation notes.</p>
+        <table class="trips-table scf-table">
+          <thead>
+            <tr>
+              <th>SCF Task</th>
+              <th style="width:80px;">QTY</th>
+              <th>Description / Comments</th>
+            </tr>
+          </thead>
+          <tbody id="scf-table-body">
+            <tr><td>AM Cross Dock</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="amCrossDock">−</button><span class="tally-val scf-val" data-key="amCrossDock">0</span><button class="tally-btn tally-plus scf-plus" data-key="amCrossDock">+</button></div></td><td><input type="text" class="scf-comment" data-key="amCrossDock" placeholder="Comments..."></td></tr>
+            <tr><td>PM Cross Dock</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="pmCrossDock">−</button><span class="tally-val scf-val" data-key="pmCrossDock">0</span><button class="tally-btn tally-plus scf-plus" data-key="pmCrossDock">+</button></div></td><td><input type="text" class="scf-comment" data-key="pmCrossDock" placeholder="Comments..."></td></tr>
+            <tr><td>AM Hash</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="amHash">−</button><span class="tally-val scf-val" data-key="amHash">0</span><button class="tally-btn tally-plus scf-plus" data-key="amHash">+</button></div></td><td><input type="text" class="scf-comment" data-key="amHash" placeholder="Comments..."></td></tr>
+            <tr><td>PM Hash</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="pmHash">−</button><span class="tally-val scf-val" data-key="pmHash">0</span><button class="tally-btn tally-plus scf-plus" data-key="pmHash">+</button></div></td><td><input type="text" class="scf-comment" data-key="pmHash" placeholder="Comments..."></td></tr>
+            <tr><td>PM Carwash</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="pmCarwash">−</button><span class="tally-val scf-val" data-key="pmCarwash">0</span><button class="tally-btn tally-plus scf-plus" data-key="pmCarwash">+</button></div></td><td><input type="text" class="scf-comment" data-key="pmCarwash" placeholder="Comments..."></td></tr>
+            <tr><td>Unit</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="unit">−</button><span class="tally-val scf-val" data-key="unit">0</span><button class="tally-btn tally-plus scf-plus" data-key="unit">+</button></div></td><td><input type="text" class="scf-comment" data-key="unit" placeholder="Comments..."></td></tr>
+            <tr><td>Registry Seals</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="registrySeals">−</button><span class="tally-val scf-val" data-key="registrySeals">0</span><button class="tally-btn tally-plus scf-plus" data-key="registrySeals">+</button></div></td><td><input type="text" class="scf-comment" data-key="registrySeals" placeholder="Comments..."></td></tr>
+            <tr><td>HCR Seals</td><td><div class="tally-cell"><button class="tally-btn tally-minus scf-minus" data-key="hcrSeals">−</button><span class="tally-val scf-val" data-key="hcrSeals">0</span><button class="tally-btn tally-plus scf-plus" data-key="hcrSeals">+</button></div></td><td><input type="text" class="scf-comment" data-key="hcrSeals" placeholder="Comments..."></td></tr>
+          </tbody>
+        </table>
+
+        <!-- SCF Operation Notes -->
+        <div style="margin-top:1.25rem;">
+          <h4 style="font-size:0.9rem;margin-bottom:0.5rem;">SCF Operation Notes</h4>
+          <textarea id="scf-op-notes" rows="4" placeholder="Enter operation notes here..." style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.85rem;background:var(--bg);color:var(--text);resize:vertical;"></textarea>
+        </div>
+        <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-light);">
+          <span id="scf-autosave-status"></span>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB: ADUS/SDUS -->
+    <div id="tab-adus" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>ADUS / SDUS Throughput</h2>
+        </div>
+        <p class="setup-subtitle">Track throughput per machine. Each machine is identified by ZIP code.</p>
+
+        <!-- Machine tabs -->
+        <div class="adus-machine-bar">
+          <div id="adus-machine-tabs" class="ps3922-zone-tabs"></div>
+          <div class="ps3922-add-zone">
+            <input type="text" id="adus-new-zip" placeholder="ZIP code" maxlength="10" style="width:100px;">
+            <select id="adus-new-type" style="padding:4px 6px;border-radius:4px;border:1px solid var(--border);font-size:0.85rem;">
+              <option value="SDUS+">SDUS+</option>
+              <option value="ADUS">ADUS</option>
+              <option value="SDUS">SDUS</option>
+            </select>
+            <button id="adus-add-machine-btn" class="btn btn-primary btn-sm">+ Add Machine</button>
+          </div>
+        </div>
+
+        <!-- Active machine worksheet (JS-rendered) -->
+        <div id="adus-worksheet" hidden>
+          <div class="ps3922-info-row" style="margin-bottom:0.75rem;">
+            <span><strong id="adus-machine-zip"></strong></span>
+            <button id="adus-delete-machine-btn" class="btn btn-danger btn-sm">Delete Machine</button>
+          </div>
+
+          <!-- Run Log -->
+          <div style="margin-top:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+              <h3 style="font-size:0.95rem;margin:0;">Run Log</h3>
+              <button id="adus-add-run" class="btn btn-primary btn-sm">+ Add Run</button>
+            </div>
+            <p class="setup-subtitle" style="margin-bottom:0.5rem;">Enter each machine run. Duration, throughput, and rates calculate automatically.</p>
+            <div class="adus-table-wrap">
+              <table class="adus-table">
+                <thead>
+                  <tr>
+                    <th class="adus-th-input">Start Time</th>
+                    <th class="adus-th-input">End Time</th>
+                    <th>Duration</th>
+                    <th class="adus-th-input">Total Pieces</th>
+                    <th>Throughput</th>
+                    <th class="adus-th-input">Rejects</th>
+                    <th class="adus-th-input">No Reads</th>
+                    <th class="adus-th-input">No Barcode</th>
+                    <th>Reject %</th>
+                    <th>No Read %</th>
+                    <th>No Barcode %</th>
+                    <th>Run Hrs</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="adus-table-body"></tbody>
+              </table>
+            </div>
+            <div id="adus-empty" class="empty-state">No runs recorded. Click "+ Add Run" to start.</div>
+          </div>
+
+          <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-light);">
+            <span id="adus-autosave-status"></span>
+          </div>
+        </div>
+
+        <div id="adus-no-machines" class="empty-state">No machines added. Enter a ZIP code above to start tracking.</div>
+      </section>
+    </div>
+
+    <!-- TAB: Questionnaire -->
+    <div id="tab-questionnaire" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header">
+          <h2>Observation Questionnaire</h2>
+        </div>
+        <p class="setup-subtitle">Only LDCs observed during this visit are shown. Answer Y/N, select a result, and add comments as needed.</p>
+        <div id="questionnaire-sections"></div>
+        <div id="questionnaire-empty" class="empty-state">No LDC observations recorded yet. Add entries in the Clerk Notes tab first.</div>
+        <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-light);">
+          <span id="quest-autosave-status"></span>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB: Summarization Comments -->
+    <div id="tab-summary-comments" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>Summarization Comments</h2>
+          <button id="summ-add-btn" class="btn btn-primary btn-sm">+ Add Comment</button>
+        </div>
+        <p class="setup-subtitle">Summarize key observations. Link each comment to a specific tab/area so the workbook lead can jump to the source.</p>
+        <div id="summ-list"></div>
+        <div id="summ-empty" class="empty-state">No summarization comments yet. Click "+ Add Comment" to start.</div>
+        <div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-light);">
+          <span id="summ-autosave-status"></span>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB: Travel Survey (Reviewer side) -->
+    <div id="tab-travel-survey" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header"><h2>Travel Survey</h2></div>
+        <p class="setup-subtitle">Please fill out your travel information for this review.</p>
+
+        <!-- Hotel Booking Link (shown when lead provided one) -->
+        <div id="travel-hotel-link-banner" style="display:none;margin-bottom:1rem;padding:0.75rem 1rem;background:var(--bg-light);border:1.5px solid var(--border);border-radius:8px;">
+          <span style="font-weight:600;">🏨 Hotel Booking:</span>
+          <a id="travel-hotel-link-url" href="#" target="_blank" rel="noopener" style="margin-left:0.5rem;color:var(--primary);word-break:break-all;"></a>
+        </div>
+
+        <div id="travel-survey-not-assigned" class="empty-state">
+          You have not been assigned a travel survey for this review.
+        </div>
+
+        <div id="travel-survey-form" style="display:none;">
+          <!-- Phone Number -->
+          <div style="margin-bottom:1.25rem;">
+            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Phone Number</label>
+            <input type="tel" id="travel-phone" class="input-field" placeholder="e.g. 555-123-4567" style="max-width:250px;">
+          </div>
+
+          <!-- Travel Mode -->
+          <div style="margin-bottom:1.25rem;">
+            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">How are you traveling?</label>
+            <div style="display:flex;gap:1rem;">
+              <label class="travel-mode-option">
+                <input type="radio" name="travel-mode" value="flying"> ✈️ Flying
+              </label>
+              <label class="travel-mode-option">
+                <input type="radio" name="travel-mode" value="driving"> 🚗 Driving
+              </label>
+            </div>
+          </div>
+
+          <!-- Driving confirmation -->
+          <div id="travel-driving-info" style="display:none;margin-bottom:1.25rem;">
+            <div class="card" style="padding:1rem;">
+              <p>✅ You've indicated you are <strong>driving</strong> to the review site. No further flight details needed.</p>
+              <p style="font-size:0.85rem;color:var(--text-light);margin-top:0.5rem;">Note: You may be asked to assist with airport pickups once carpool groups are finalized.</p>
+            </div>
+          </div>
+
+          <!-- Flight Details -->
+          <div id="travel-flight-details" style="display:none;">
+            <!-- Arrival -->
+            <h3 style="margin-bottom:0.5rem;">Arrival Flight</h3>
+            <div class="wb-travel-form" style="margin-bottom:1.25rem;">
+              <div class="wb-travel-field">
+                <label>Arrival Airport</label>
+                <input type="text" id="travel-arrive-airport" class="input-field" placeholder="e.g. ERI, CLE, PIT" style="text-transform:uppercase;">
+              </div>
+              <div class="wb-travel-field">
+                <label>Arrival Date</label>
+                <input type="date" id="travel-arrive-date" class="input-field">
+              </div>
+              <div class="wb-travel-field">
+                <label>Arrival Time</label>
+                <input type="time" id="travel-arrive-time" class="input-field">
+              </div>
+              <div class="wb-travel-field">
+                <label>Airline</label>
+                <input type="text" id="travel-arrive-airline" class="input-field" placeholder="e.g. Delta">
+              </div>
+              <div class="wb-travel-field">
+                <label>Flight #</label>
+                <input type="text" id="travel-arrive-flight" class="input-field" placeholder="e.g. DL1234">
+              </div>
+            </div>
+
+            <!-- Departure -->
+            <h3 style="margin-bottom:0.5rem;">Departure Flight</h3>
+            <div class="wb-travel-form" style="margin-bottom:1.25rem;">
+              <div class="wb-travel-field">
+                <label>Departure Airport</label>
+                <input type="text" id="travel-depart-airport" class="input-field" placeholder="e.g. ERI, CLE, PIT" style="text-transform:uppercase;">
+              </div>
+              <div class="wb-travel-field">
+                <label>Departure Date</label>
+                <input type="date" id="travel-depart-date" class="input-field">
+              </div>
+              <div class="wb-travel-field">
+                <label>Departure Time</label>
+                <input type="time" id="travel-depart-time" class="input-field">
+              </div>
+              <div class="wb-travel-field">
+                <label>Airline</label>
+                <input type="text" id="travel-depart-airline" class="input-field" placeholder="e.g. Delta">
+              </div>
+              <div class="wb-travel-field">
+                <label>Flight #</label>
+                <input type="text" id="travel-depart-flight" class="input-field" placeholder="e.g. DL5678">
+              </div>
+            </div>
+          </div>
+
+          <!-- Hotel Booking Status -->
+          <div style="margin-bottom:1.25rem;">
+            <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Hotel</label>
+            <label style="cursor:pointer;font-size:0.9rem;">
+              <input type="checkbox" id="travel-hotel-booked"> Hotel has been booked
+            </label>
+          </div>
+
+          <button id="travel-survey-submit" class="btn btn-primary">Submit Travel Info</button>
+          <span id="travel-survey-status" style="margin-left:0.75rem;font-size:0.85rem;"></span>
+
+          <!-- Hotel-only update (visible after initial submit) -->
+          <div id="travel-hotel-update" style="display:none;margin-top:1rem;padding:0.75rem;background:var(--bg-light);border:1px solid var(--border);border-radius:6px;">
+            <label style="cursor:pointer;font-size:0.9rem;">
+              <input type="checkbox" id="travel-hotel-update-check"> Hotel has been booked
+            </label>
+            <button id="travel-hotel-update-btn" class="btn btn-primary btn-sm" style="margin-left:0.75rem;">Update Hotel Status</button>
+            <span id="travel-hotel-update-status" style="margin-left:0.5rem;font-size:0.82rem;"></span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB: Schedules (all roles) -->
+    <div id="tab-schedules" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>Schedules</h2>
+          <select id="sched-view-type" style="font-size:0.78rem;padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);">
+            <option value="review">Review Schedule</option>
+            <option value="trips">Daily Trips to Office</option>
+            <option value="airport">Airport Schedule</option>
+          </select>
+        </div>
+        <div id="sched-view-card" style="margin-top:0.75rem;"></div>
+      </section>
+    </div>
+
+    <!-- TAB: End of Day -->
+    <div id="tab-endofday" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>End of Day Review</h2>
+          <button id="eod-run-check" class="btn btn-primary btn-sm">Run Review Check</button>
+        </div>
+        <p class="setup-subtitle">Review all warnings across every tab before submitting. Click a flag to navigate to the issue. Mark each as reviewed to clear it.</p>
+        <div id="eod-flags-container"></div>
+        <div id="eod-empty" class="empty-state">Click "Run Review Check" to scan all tabs for issues.</div>
+        <div id="eod-all-clear" class="eod-all-clear" hidden>
+          <span class="eod-check-icon">&#10003;</span>
+          <p>All flags have been reviewed!</p>
+          <button id="eod-submit-btn" class="btn btn-primary">Submit Day</button>
+        </div>
+        <div id="eod-status" class="status-msg" hidden></div>
+      </section>
+
+      <!-- POD Observation Timeline -->
+      <section class="card" id="eod-timeline-section">
+        <h2>My Observation Timeline</h2>
+        <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.75rem;">Each block represents an observation entry. Width = duration.</p>
+        <div class="timeline-track" id="eod-timeline-track"></div>
+        <div id="eod-timeline-legend" class="timeline-legend"></div>
+      </section>
+    </div>
+  </main>
+
+
+
+
+
+  <script src="js/gh-config.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/reviews.js"></script>
+  <script>
+  // --- Tab switching ---
+  (function() {
+    var tabs = document.querySelectorAll('.review-tab');
+    var panels = document.querySelectorAll('.review-tab-panel');
+    var stickyAdd = null;
+    var mhStickyAdd = null;
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        panels.forEach(function(p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        // Only show Add Row on the active notes tab
+        if (!stickyAdd) stickyAdd = document.getElementById('inline-add-row');
+        if (!mhStickyAdd) mhStickyAdd = document.getElementById('mh-inline-add-row');
+        if (stickyAdd) stickyAdd.style.display = (tab.dataset.tab === 'tab-clerk-notes') ? '' : 'none';
+        if (mhStickyAdd) mhStickyAdd.style.display = (tab.dataset.tab === 'tab-mh-notes') ? '' : 'none';
+      });
+    });
+
+    // --- Live Clock ---
+    function updateClock() {
+      var now = new Date();
+      document.getElementById('live-clock').textContent =
+        String(now.getHours()).padStart(2,'0') + ':' +
+        String(now.getMinutes()).padStart(2,'0') + ':' +
+        String(now.getSeconds()).padStart(2,'0');
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // --- Online/Offline indicator ---
+    var connEl = document.getElementById('conn-status');
+    function updateConn() {
+      if (navigator.onLine) {
+        connEl.className = 'conn-indicator conn-online';
+        connEl.innerHTML = '&#9679; Online';
+      } else {
+        connEl.className = 'conn-indicator conn-offline';
+        connEl.innerHTML = '&#9679; Offline';
+      }
+    }
+    updateConn();
+    window.addEventListener('online', updateConn);
+    window.addEventListener('offline', updateConn);
+  })();
+  </script>
+  <script src="js/app.js"></script>
+  <script src="js/mh-access.js"></script>
+  <script src="js/mailhandler.js"></script>
+  <script src="js/ps3922.js"></script>
+  <script src="js/trips.js"></script>
+  <script src="js/adus.js"></script>
+  <script src="js/questionnaire.js"></script>
+  <script src="js/summarization.js"></script>
+  <script src="js/endofday.js"></script>
+  <script src="js/timeline.js"></script>
+  <script src="js/workbook.js"></script>
+  <script src="js/schedule.js"></script>
+  <script src="js/scheduleViewer.js"></script>
+  <script src="js/travel.js"></script>
+  <script src="js/expense.js"></script>
+  <script src="js/workbook-review.js"></script>
+</body>
+</html>

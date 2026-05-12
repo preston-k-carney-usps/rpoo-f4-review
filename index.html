@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -506,21 +506,6 @@
         statusEl.textContent = 'Request submitted! An admin will review it.';
         statusEl.className = 'status-msg success'; statusEl.hidden = false;
       });
-    }
-
-    // ---- Role Switcher (admin only debug tool) ----
-    if (Auth.getRealRole() === 'admin') {
-      var switcher = document.createElement('div');
-      switcher.className = 'role-switcher';
-      switcher.innerHTML = '<label>&#128736; Debug — Switch Access Level:</label>';
-      ['admin', 'teamlead', 'reviewer', 'readonly'].forEach(function(r) {
-        var btn = document.createElement('button');
-        btn.textContent = Auth.ROLE_LABELS[r] || r;
-        if (r === user.role) btn.className = 'active';
-        btn.addEventListener('click', function() { Auth.switchRole(r); });
-        switcher.appendChild(btn);
-      });
-      document.body.appendChild(switcher);
     }
 
     function daysSince(dateStr) {

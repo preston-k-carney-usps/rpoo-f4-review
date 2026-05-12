@@ -361,36 +361,12 @@ var Auth = (function() {
   function switchRole(role) {
     var session = currentUser();
     if (!session) return;
-    // Preserve the real admin user id so we can always get back
-    var realId = session._realId || session.id;
-    var realRole = session._realRole || session.role;
-
-    // Try to find the matching debug user account
-    var targetUsername = DEBUG_USERS[role];
-    var users = getUsers();
-    var targetUser = null;
-    if (targetUsername) {
-      for (var i = 0; i < users.length; i++) {
-        if (users[i].username === targetUsername) {
-          targetUser = users[i];
-          break;
-        }
-      }
+    // Store the real role so we can restore it
+    if (!session._realRole) {
+      session._realRole = session.role;
     }
-
-    if (targetUser) {
-      // Switch to that actual user session
-      var newSession = JSON.parse(JSON.stringify(targetUser));
-      newSession._realId = realId;
-      newSession._realRole = realRole;
-      localStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
-    } else {
-      // Fallback: just swap role on current session
-      session._realId = realId;
-      session._realRole = realRole;
-      session.role = role;
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    }
+    session.role = role;
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     window.location.reload();
   }
 
@@ -409,6 +385,10 @@ var Auth = (function() {
     // Always render right-side Tools drawer for everyone
     renderToolboxDrawer();
 
+    // Only show debug drawer for admin (real role)
+    var realRole = session._realRole || session.role;
+    if (realRole !== 'admin') return;
+
     var drawer = document.createElement('div');
     drawer.id = 'debug-drawer';
     drawer.className = 'debug-drawer debug-drawer--collapsed';
@@ -416,7 +396,7 @@ var Auth = (function() {
     var tab = document.createElement('button');
     tab.className = 'debug-drawer-tab';
     tab.innerHTML = '&#9881;';
-    tab.title = 'Switch User';
+    tab.title = 'Role Switcher';
     tab.addEventListener('click', function() {
       drawer.classList.toggle('debug-drawer--collapsed');
     });
@@ -424,32 +404,39 @@ var Auth = (function() {
 
     var panel = document.createElement('div');
     panel.className = 'debug-drawer-panel';
-    panel.innerHTML = '<div class="debug-drawer-title">Switch User</div>';
+    panel.innerHTML = '<div class="debug-drawer-title">Role Switcher</div>';
 
-    var roleOrder = { admin: 0, teamlead: 1, readonly: 2, reviewer: 3 };
-    var sorted = users.slice().sort(function(a, b) {
-      var ra = roleOrder[a.role] !== undefined ? roleOrder[a.role] : 9;
-      var rb = roleOrder[b.role] !== undefined ? roleOrder[b.role] : 9;
-      if (ra !== rb) return ra - rb;
-      return (a.displayName || '').localeCompare(b.displayName || '');
-    });
+    // Show current status
+    if (session._realRole && session.role !== session._realRole) {
+      var info = document.createElement('div');
+      info.style.cssText = 'padding:6px 8px;margin-bottom:8px;background:#7c2d12;color:#fed7aa;border-radius:6px;font-size:0.75rem;text-align:center;';
+      info.textContent = 'Viewing as: ' + (ROLE_LABELS[session.role] || session.role);
+      panel.appendChild(info);
 
-    var roleLabels = { admin: 'Admin', teamlead: 'Review Lead', readonly: 'Read Only', reviewer: 'POD' };
-    var lastRole = '';
-    sorted.forEach(function(u) {
-      if (u.role !== lastRole) {
-        lastRole = u.role;
-        var hdr = document.createElement('div');
-        hdr.className = 'debug-drawer-role-hdr';
-        hdr.textContent = roleLabels[u.role] || u.role;
-        panel.appendChild(hdr);
-      }
-      var btn = document.createElement('button');
-      btn.className = 'debug-drawer-user' + (u.id === session.id ? ' debug-drawer-user--active' : '');
-      btn.textContent = u.displayName || u.username;
-      btn.addEventListener('click', function() {
-        setSession(u);
+      var restoreBtn = document.createElement('button');
+      restoreBtn.className = 'debug-drawer-user debug-drawer-user--active';
+      restoreBtn.textContent = 'Restore: ' + (ROLE_LABELS[session._realRole] || session._realRole);
+      restoreBtn.addEventListener('click', function() {
+        session.role = session._realRole;
+        delete session._realRole;
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
         window.location.reload();
+      });
+      panel.appendChild(restoreBtn);
+
+      var sep = document.createElement('hr');
+      sep.style.cssText = 'border:none;border-top:1px solid #334155;margin:8px 0;';
+      panel.appendChild(sep);
+    }
+
+    // Role switch buttons
+    var roles = ['admin', 'teamlead', 'readonly', 'reviewer'];
+    roles.forEach(function(r) {
+      var btn = document.createElement('button');
+      btn.className = 'debug-drawer-user' + (session.role === r ? ' debug-drawer-user--active' : '');
+      btn.textContent = ROLE_LABELS[r] || r;
+      btn.addEventListener('click', function() {
+        switchRole(r);
       });
       panel.appendChild(btn);
     });

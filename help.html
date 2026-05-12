@@ -1,0 +1,759 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program &mdash; Help Guide</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+  <style>
+    .help-container { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+    .help-container h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    .help-container h2 { font-size: 1.25rem; margin-top: 2rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--primary); color: var(--primary); }
+    .help-container h3 { font-size: 1.05rem; margin-top: 1.25rem; }
+    .help-container h4 { font-size: 0.95rem; margin-top: 1rem; color: var(--text-light); }
+    .help-container p, .help-container li { font-size: 0.92rem; line-height: 1.7; }
+    .help-container ul, .help-container ol { padding-left: 1.3rem; }
+    .help-container li { margin-bottom: 0.3rem; }
+    .help-container code { background: var(--bg-light); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; }
+    .help-toc { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0 2rem; }
+    .help-toc h3 { margin-top: 0; font-size: 1rem; }
+    .help-toc ol { margin: 0; }
+    .help-toc li { margin-bottom: 0.2rem; }
+    .help-toc a { color: var(--primary); text-decoration: none; }
+    .help-toc a:hover { text-decoration: underline; }
+    .help-note { background: rgba(59,130,246,0.08); border-left: 3px solid #3b82f6; padding: 0.6rem 1rem; border-radius: 0 6px 6px 0; margin: 0.75rem 0; font-size: 0.88rem; }
+    .help-warn { background: rgba(239,68,68,0.08); border-left: 3px solid #ef4444; padding: 0.6rem 1rem; border-radius: 0 6px 6px 0; margin: 0.75rem 0; font-size: 0.88rem; }
+    .help-tip { background: rgba(16,185,129,0.08); border-left: 3px solid #10b981; padding: 0.6rem 1rem; border-radius: 0 6px 6px 0; margin: 0.75rem 0; font-size: 0.88rem; }
+    .role-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; }
+    .role-table th, .role-table td { padding: 0.5rem 0.6rem; border: 1px solid var(--border); text-align: left; }
+    .role-table th { background: var(--bg-light); font-weight: 700; }
+    .role-table td:first-child { font-weight: 600; white-space: nowrap; }
+    .help-step { display: flex; gap: 0.75rem; margin: 0.6rem 0; align-items: flex-start; }
+    .help-step-num { background: var(--primary); color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .help-step-text { flex: 1; }
+    @media (max-width: 600px) {
+      .help-container { padding: 1rem 0.75rem; }
+      .help-container h1 { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="summary.html">Review Dashboard</a>
+      <a href="help.html" class="active">Help</a>
+    </div>
+  </nav>
+
+  <div class="help-container">
+    <h1>📖 Help Guide &amp; User Instructions</h1>
+    <p style="color:var(--text-light);margin-bottom:1rem;">Complete reference for the RPOO Function 4 Review Scheduling &amp; Observation Tool</p>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="help-toc">
+      <h3>Table of Contents</h3>
+      <ol>
+        <li><a href="#getting-started">Getting Started</a></li>
+        <li><a href="#roles">Understanding Roles</a></li>
+        <li><a href="#home">Home Page &amp; Review Cards</a></li>
+        <li><a href="#pod-workflow">POD (Reviewer) Workflow</a></li>
+        <li><a href="#clerk-notes">Clerk Notes Tab</a></li>
+        <li><a href="#mh-notes">Mail Handler Notes Tab</a></li>
+        <li><a href="#ps3922">PS Form 3922 Tab</a></li>
+        <li><a href="#trips">Record Trips Tab</a></li>
+        <li><a href="#scf">SCF Hub Tab</a></li>
+        <li><a href="#adus">ADUS/SDUS Tab</a></li>
+        <li><a href="#questionnaire">Questionnaire Tab</a></li>
+        <li><a href="#summarization">Summarization Tab</a></li>
+        <li><a href="#travel">Travel Survey</a></li>
+        <li><a href="#schedules">Schedules Tab</a></li>
+        <li><a href="#eod">End of Day Tab</a></li>
+        <li><a href="#lead-workflow">Lead / Workbook Workflow</a></li>
+        <li><a href="#lead-prereview">Lead: Pre-Review Phase</a></li>
+        <li><a href="#lead-review">Lead: Review Phase</a></li>
+        <li><a href="#lead-postreview">Lead: Post-Review Phase</a></li>
+        <li><a href="#admin">Admin Panel</a></li>
+        <li><a href="#settings">Settings &amp; Preferences</a></li>
+        <li><a href="#faq">FAQ &amp; Troubleshooting</a></li>
+      </ol>
+    </div>
+
+    <!-- 1. GETTING STARTED -->
+    <h2 id="getting-started">1. Getting Started</h2>
+
+    <h3>Logging In</h3>
+    <div class="help-step">
+      <span class="help-step-num">1</span>
+      <div class="help-step-text">Open the application in your web browser (Chrome, Edge, or Firefox recommended).</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">2</span>
+      <div class="help-step-text">Enter your <strong>username</strong> and <strong>password</strong>. Your username is typically your full name with no spaces, all lowercase (e.g., <code>johnsmith</code>).</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">3</span>
+      <div class="help-step-text">Your default password is the same as your username. On first login, you will be prompted to change your password.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">4</span>
+      <div class="help-step-text">After logging in, you'll be taken to the <strong>Home</strong> page where you'll see your assigned reviews.</div>
+    </div>
+
+    <div class="help-note">
+      <strong>💡 Note:</strong> If you forget your password, contact your Review Lead or Admin to reset it. The default password is always your full name, lowercase, no spaces (e.g., "Jewel, Jeri L" → <code>jewel,jeril</code>).
+    </div>
+
+    <h3>First-Time Setup</h3>
+    <p>After logging in for the first time:</p>
+    <ol>
+      <li>Change your password when prompted (minimum 4 characters).</li>
+      <li>Check the <strong>Home</strong> page — your assigned review(s) will appear as cards.</li>
+      <li>Wait for your Review Lead to assign you to a review before starting.</li>
+    </ol>
+
+    <!-- 2. ROLES -->
+    <h2 id="roles">2. Understanding Roles</h2>
+
+    <h3>System Roles (Your Account Level)</h3>
+    <p>Your system role determines what pages and features you can access across the entire application.</p>
+
+    <table class="role-table">
+      <thead>
+        <tr><th>Role</th><th>What You Can Do</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Admin</td>
+          <td>Full access: manage users, manage all reviews, approve requests, system reset, view all data. No time restrictions.</td>
+        </tr>
+        <tr>
+          <td>Review Lead</td>
+          <td>Create and manage review packages, set up travel, build schedules, assign teams, manage workbook. Can access Admin panel (Reviews tab only). 30-day extended access window.</td>
+        </tr>
+        <tr>
+          <td>POD (Reviewer)</td>
+          <td>Enter observations, fill out forms, submit data for assigned reviews. Data locks 1 week after review ends.</td>
+        </tr>
+        <tr>
+          <td>Read Only</td>
+          <td>View dashboards and summaries. Cannot edit or enter data.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Review Roles (Your Role Per Review)</h3>
+    <p>Within each review, you are assigned a specific review role that determines which tabs and features you see.</p>
+
+    <table class="role-table">
+      <thead>
+        <tr><th>Review Role</th><th>What You See</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Clerk Reviewer</td>
+          <td>Clerk Notes tab for time-based clerk observations. All standard tabs (PS 3922, Trips, SCF Hub, ADUS/SDUS, Questionnaire, Summarization, End of Day).</td>
+        </tr>
+        <tr>
+          <td>Mail Handler Reviewer</td>
+          <td>Mail Handler Notes tab instead of Clerk Notes. Tracks a specific MH employee per observation session. Same supporting tabs as Clerk.</td>
+        </tr>
+        <tr>
+          <td>Workbook Lead</td>
+          <td>Full workbook management with Pre-Review, Review, and Post-Review phases. Can view and edit all reviewer data. Can also enter their own observations via "My Notes" mode.</td>
+        </tr>
+        <tr>
+          <td>Review Lead</td>
+          <td>Everything Workbook Lead has, plus Travel management, Schedule builder, Finalize checklist, and Information tabs.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 3. HOME PAGE -->
+    <h2 id="home">3. Home Page &amp; Review Cards</h2>
+
+    <p>The Home page is your dashboard. Here you'll find:</p>
+
+    <h3>Quick Actions</h3>
+    <ul>
+      <li><strong>Start Review Day</strong> — Begin entering data for a review day. Takes you to the setup page.</li>
+      <li><strong>View Summary</strong> — Open the Review Dashboard to see aggregate data across all reviews.</li>
+      <li><strong>Create Review</strong> (Leads/Admins only) — Opens the Admin panel to create a new review.</li>
+    </ul>
+
+    <h3>Review Cards</h3>
+    <p>Each review you're assigned to appears as a card with:</p>
+    <ul>
+      <li><strong>Review Name</strong> — The name of the review (e.g., "Erie S&DC Review")</li>
+      <li><strong>Date Range</strong> — Start and end dates of the review period</li>
+      <li><strong>Offices</strong> — Which USPS offices are being reviewed</li>
+      <li><strong>Your Role</strong> — Your assigned role for this review (badge)</li>
+      <li><strong>Progress Indicators</strong> — Day 1 and Day 2 status dots</li>
+      <li><strong>Action Buttons</strong>:
+        <ul>
+          <li><strong>Start Day 1 / Start Day 2</strong> — Begin a new day of observations</li>
+          <li><strong>Edit Day 1 / Day 2</strong> — Return to a day you've already started</li>
+          <li><strong>Manage Review</strong> (Leads) — Open the workbook view</li>
+          <li><strong>Travel ✈️</strong> — Travel survey status and link</li>
+        </ul>
+      </li>
+    </ul>
+
+    <div class="help-note">
+      <strong>💡 Review Timing:</strong> You can only start/edit reviews within the active window. PODs: up to 1 week after the review ends. Leads: up to 30 days after. After that, data is locked and you can only "View Summary."
+    </div>
+
+    <!-- 4. POD WORKFLOW -->
+    <h2 id="pod-workflow">4. POD (Reviewer) Workflow</h2>
+
+    <h3>Starting Your Review Day</h3>
+    <div class="help-step">
+      <span class="help-step-num">1</span>
+      <div class="help-step-text">From the Home page, find your review card and click <strong>"Start Day 1"</strong>.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">2</span>
+      <div class="help-step-text">You'll be taken to the Review page. Your <strong>Observation Info</strong> bar at the top shows the office, date, day number, and your role.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">3</span>
+      <div class="help-step-text">Your workflow is divided into <strong>3 phases</strong> (buttons shown below the Day toggle):
+        <ul>
+          <li><strong>Pre-Review</strong> — Review schedules and complete travel survey (if applicable)</li>
+          <li><strong>Review</strong> — Enter all observation data across tabs</li>
+          <li><strong>Post-Review</strong> — Confirm expense report submission</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Day Toggle</h3>
+    <p>Use the <strong>Day 1 / Day 2</strong> buttons to switch between observation days. Each day has its own separate data.</p>
+
+    <h3>Phase Workflow</h3>
+    <h4>Pre-Review Phase</h4>
+    <ul>
+      <li>View the <strong>Schedules</strong> tab to see when you need to arrive and where.</li>
+      <li>Complete the <strong>Travel Survey</strong> if your lead has assigned one (flight/driving details, hotel booking).</li>
+    </ul>
+
+    <h4>Review Phase (Main Data Entry)</h4>
+    <p>This is where you'll spend most of your time. Switch between the tabs along the top to enter data:</p>
+    <ul>
+      <li><strong>Clerk Notes</strong> or <strong>MH Notes</strong> — Your primary observation entries</li>
+      <li><strong>PS 3922</strong> — Volume recording by zone</li>
+      <li><strong>Record Trips</strong> — Truck arrival container counts</li>
+      <li><strong>SCF Hub</strong> — Tally counts for SCF operations</li>
+      <li><strong>ADUS/SDUS</strong> — Machine throughput runs</li>
+      <li><strong>Questionnaire</strong> — Y/N questions about observed operations</li>
+      <li><strong>Summarization</strong> — Summary comments linked to specific tabs</li>
+      <li><strong>End of Day</strong> — Run validation checks and submit your day</li>
+    </ul>
+
+    <div class="help-tip">
+      <strong>✅ Autosave:</strong> All your data is automatically saved as you type. You'll see a save indicator. You can close your browser and come back — your data will still be there.
+    </div>
+
+    <h4>Post-Review Phase</h4>
+    <ul>
+      <li>Confirm that you have submitted your expense report by checking the box and clicking <strong>"Confirm"</strong>.</li>
+    </ul>
+
+    <!-- 5. CLERK NOTES -->
+    <h2 id="clerk-notes">5. Clerk Notes Tab</h2>
+    <p>This is your primary observation entry tab if you are a <strong>Clerk Reviewer</strong>.</p>
+
+    <h3>How to Enter Observations</h3>
+    <div class="help-step">
+      <span class="help-step-num">1</span>
+      <div class="help-step-text">Each row represents one observation period. Fields include:
+        <ul>
+          <li><strong>Begin Time / End Time</strong> — The time window of the observation (HH:MM format)</li>
+          <li><strong>LDC</strong> — Labor Distribution Code (dropdown: LDC 41, 42, 43A, 43L, 43F, 43P, 44, 45, 48, NP, Break, Lunch, Comfort Break, Cross Craft)</li>
+          <li><strong>OPN</strong> — Operation Number (auto-populates based on selected LDC)</li>
+          <li><strong>Total Clerks</strong> — Number of clerks observed in this operation</li>
+          <li><strong>Work Quality</strong> — Assessment of work quality</li>
+          <li><strong>Description</strong> — Free-text notes about the observation</li>
+        </ul>
+      </div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">2</span>
+      <div class="help-step-text">Click <strong>"+ Add Row"</strong> at the bottom to add a new observation entry.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">3</span>
+      <div class="help-step-text">Data is saved automatically. The elapsed time for each entry is calculated from Begin → End time × Total Clerks.</div>
+    </div>
+
+    <div class="help-note">
+      <strong>💡 LDC Reference:</strong><br>
+      41 = ADUS/SDUS &nbsp;|&nbsp; 42 = BRM/PD/PRS &nbsp;|&nbsp; 43A = Allied Duties &nbsp;|&nbsp; 43L = Manual Flats<br>
+      43F = Manual Letters &nbsp;|&nbsp; 43P = Manual Parcels &nbsp;|&nbsp; 44 = PO Box Distribution &nbsp;|&nbsp; 45 = Retail Window<br>
+      48 = Misc Customer Service &nbsp;|&nbsp; NP = Non-Productive &nbsp;|&nbsp; BRK = Break &nbsp;|&nbsp; LUN = Lunch
+    </div>
+
+    <!-- 6. MH NOTES -->
+    <h2 id="mh-notes">6. Mail Handler Notes Tab</h2>
+    <p>This is your primary observation entry tab if you are a <strong>Mail Handler Reviewer</strong>.</p>
+
+    <h3>Key Differences from Clerk Notes</h3>
+    <ul>
+      <li>You observe a <strong>specific employee</strong> — their name is set in the Observation Info bar.</li>
+      <li>Instead of LDC codes, you select <strong>Task codes</strong> (B = Breaking Down Mail, S = Spreading, D = Dispatching, etc.).</li>
+      <li>Tasks are color-coded by category: <span style="color:#3b82f6;">■ Work</span>, <span style="color:#f59e0b;">■ Break</span>, <span style="color:#ef4444;">■ Non-Productive</span>, <span style="color:#8b5cf6;">■ Cross Craft</span>.</li>
+    </ul>
+
+    <h3>MH Task Codes</h3>
+    <table class="role-table" style="font-size:0.82rem;">
+      <thead><tr><th>Code</th><th>Task</th><th>Category</th></tr></thead>
+      <tbody>
+        <tr><td>B</td><td>Breaking Down Mail</td><td style="color:#3b82f6;">Work</td></tr>
+        <tr><td>S</td><td>Spreading Mail</td><td style="color:#3b82f6;">Work</td></tr>
+        <tr><td>D</td><td>Dispatching Mail</td><td style="color:#3b82f6;">Work</td></tr>
+        <tr><td>CR</td><td>Putting Mail in Carrier Route Order</td><td style="color:#3b82f6;">Work</td></tr>
+        <tr><td>LT/ULT</td><td>Load Truck &amp; Unload Truck</td><td style="color:#3b82f6;">Work</td></tr>
+        <tr><td>HA</td><td>Hashing Mail</td><td style="color:#3b82f6;">Work</td></tr>
+        <tr><td>SM</td><td>Staging Mail</td><td style="color:#3b82f6;">Work</td></tr>
+        <tr><td>X</td><td>Break</td><td style="color:#f59e0b;">Break</td></tr>
+        <tr><td>XX</td><td>Lunch</td><td style="color:#f59e0b;">Break</td></tr>
+        <tr><td>CB</td><td>Comfort Break</td><td style="color:#f59e0b;">Break</td></tr>
+        <tr><td>NP</td><td>Non-productive Time</td><td style="color:#ef4444;">Non-Productive</td></tr>
+        <tr><td>NW</td><td>No Work Available</td><td style="color:#ef4444;">Non-Productive</td></tr>
+        <tr><td>CLK</td><td>Clerk Functions (Cross Craft)</td><td style="color:#8b5cf6;">Cross Craft</td></tr>
+        <tr><td>O</td><td>Misc. Activity (describe in comments)</td><td style="color:#3b82f6;">Work</td></tr>
+      </tbody>
+    </table>
+
+    <!-- 7. PS FORM 3922 -->
+    <h2 id="ps3922">7. PS Form 3922 Tab</h2>
+    <p>Record mail volume data by zone for the PS Form 3922.</p>
+
+    <h3>How to Use</h3>
+    <ol>
+      <li>Click <strong>"+ Add Zone"</strong> to create a zone tab (e.g., "ALL ZONES", "Zone 1-3").</li>
+      <li>Enter volume counts in the worksheet grid for each zone.</li>
+      <li>Use the <strong>PO Box DPS</strong> section for DPS piece counts.</li>
+      <li><strong>Piece Conversion</strong> auto-calculates:
+        <ul>
+          <li>Letters: 221 per 12-inch tray</li>
+          <li>Flats: 115 per 12-inch tray</li>
+        </ul>
+      </li>
+      <li>Switch between zones using the tabs at the top of the section.</li>
+    </ol>
+
+    <!-- 8. RECORD TRIPS -->
+    <h2 id="trips">8. Record Trips Tab</h2>
+    <p>Track truck arrivals and container counts throughout the day.</p>
+
+    <h3>How to Use</h3>
+    <ol>
+      <li>An <strong>"On Hand"</strong> trip is auto-created for the initial mail count.</li>
+      <li>Click <strong>"+ Add Trip"</strong> when a new truck arrives.</li>
+      <li>Enter container counts for each trip (letter trays, flat tubs, parcels, etc.).</li>
+      <li>Use <strong>Mail Flow &amp; Containers Notes</strong> to add free-text notes about deliveries.</li>
+    </ol>
+
+    <!-- 9. SCF HUB -->
+    <h2 id="scf">9. SCF Hub Tab</h2>
+    <p>Tally counts for Sectional Center Facility operations.</p>
+
+    <h3>How to Use</h3>
+    <ol>
+      <li>Use the <strong>+/−</strong> buttons to tally counts for each operation:
+        <ul>
+          <li>AM/PM Cross Dock, AM/PM Hash, PM Carwash</li>
+          <li>Unit, Registry Seals, HCR Seals</li>
+        </ul>
+      </li>
+      <li>Add comments/descriptions for each tally row.</li>
+      <li>Use the <strong>SCF Operation Notes</strong> text area for general observations.</li>
+    </ol>
+
+    <!-- 10. ADUS/SDUS -->
+    <h2 id="adus">10. ADUS/SDUS Tab</h2>
+    <p>Track automated machine throughput runs.</p>
+
+    <h3>How to Use</h3>
+    <ol>
+      <li>Click <strong>"+ Add Machine"</strong> and enter the ZIP code and machine type (SDUS+, ADUS, or SDUS).</li>
+      <li>For each machine, click <strong>"+ Add Run"</strong> to log a throughput run:
+        <ul>
+          <li><strong>Start/End Time</strong> — Automatically calculates duration</li>
+          <li><strong>Total Pieces</strong> — Automatically calculates throughput (pieces/hour)</li>
+          <li><strong>Rejects, No Reads, No Barcode</strong> — Automatically calculates percentages</li>
+        </ul>
+      </li>
+      <li>Switch between machines using the tabs at the top.</li>
+    </ol>
+
+    <!-- 11. QUESTIONNAIRE -->
+    <h2 id="questionnaire">11. Questionnaire Tab</h2>
+    <p>Answer observation questions about the operations you witnessed during your review day.</p>
+
+    <h3>How It Works</h3>
+    <ul>
+      <li>The questionnaire <strong>dynamically shows only the LDCs you observed</strong> in your Clerk Notes.</li>
+      <li>For each question: select <strong>Yes/No</strong>, choose a result, and add comments if needed.</li>
+      <li>If you haven't entered any Clerk Notes yet, the questionnaire will be empty — go fill out Clerk Notes first.</li>
+    </ul>
+
+    <!-- 12. SUMMARIZATION -->
+    <h2 id="summarization">12. Summarization Tab</h2>
+    <p>Write summary comments that reference specific tabs and findings.</p>
+
+    <h3>How to Use</h3>
+    <ol>
+      <li>Click <strong>"+ Add Comment"</strong> to create a new summary entry.</li>
+      <li>Select which <strong>source tab</strong> the comment relates to (Clerk Notes, PS 3922, Trips, etc.).</li>
+      <li>Write your summary comment. These comments are compiled by the Workbook Lead.</li>
+    </ol>
+
+    <!-- 13. TRAVEL SURVEY -->
+    <h2 id="travel">13. Travel Survey</h2>
+    <p>If your Review Lead has assigned you to the travel survey, you'll see this tab during the <strong>Pre-Review</strong> phase.</p>
+
+    <h3>How to Complete</h3>
+    <ol>
+      <li>Enter your <strong>phone number</strong>.</li>
+      <li>Select your <strong>travel mode</strong>: Flying ✈️ or Driving 🚗.</li>
+      <li>If flying, fill in <strong>arrival and departure flight details</strong>:
+        <ul>
+          <li>Airport code, date, time, airline, flight number</li>
+        </ul>
+      </li>
+      <li>Check <strong>"Hotel has been booked"</strong> if applicable.</li>
+      <li>Click <strong>"Submit Travel Survey"</strong>.</li>
+    </ol>
+
+    <div class="help-note">
+      <strong>💡 Hotel Booking:</strong> If your lead provided a hotel booking link, you'll see it as a banner at the top of the Travel Survey tab.
+    </div>
+
+    <!-- 14. SCHEDULES -->
+    <h2 id="schedules">14. Schedules Tab</h2>
+    <p>View the schedules created by your Review Lead. Available during the <strong>Pre-Review</strong> phase.</p>
+
+    <h3>What You'll See</h3>
+    <ul>
+      <li><strong>Review Schedule</strong> — When to arrive at the office and which employees to observe. Reviewers arrive 10 minutes before the employee's start time.</li>
+      <li><strong>Daily Trips to Office</strong> — Transportation groups (who's riding together).</li>
+      <li><strong>Airport Schedule</strong> — Pickup and dropoff details for flying team members.</li>
+    </ul>
+
+    <!-- 15. END OF DAY -->
+    <h2 id="eod">15. End of Day Tab</h2>
+    <p>Complete your review day by running validation checks and submitting.</p>
+
+    <h3>How to Submit Your Day</h3>
+    <div class="help-step">
+      <span class="help-step-num">1</span>
+      <div class="help-step-text">Click <strong>"Run Review Check"</strong> to scan all your tabs for issues (missing data, time gaps, etc.).</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">2</span>
+      <div class="help-step-text">Review each <strong>flag</strong> that appears. Click on a flag to jump to the tab where the issue is.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">3</span>
+      <div class="help-step-text">Mark each flag as <strong>reviewed</strong> (dismiss it) after addressing or acknowledging the issue.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">4</span>
+      <div class="help-step-text">Once all flags are cleared, the <strong>"Submit Day"</strong> button appears. Click it to finalize your day.</div>
+    </div>
+
+    <h3>Observation Timeline</h3>
+    <p>Below the validation section, you'll see a <strong>visual timeline</strong> of your observation entries. Each block represents one entry, with width proportional to duration. Blocks are color-coded by LDC (clerks) or task category (mail handlers).</p>
+
+    <!-- 16. LEAD WORKFLOW -->
+    <h2 id="lead-workflow">16. Lead / Workbook Workflow</h2>
+    <p>If you are a <strong>Workbook Lead</strong> or <strong>Review Lead</strong>, you have a comprehensive management view.</p>
+
+    <h3>Accessing Your Workbook</h3>
+    <ol>
+      <li>From the Home page, click <strong>"Manage Review"</strong> on your review card.</li>
+      <li>You'll enter the <strong>Workbook view</strong> with 3 phases: Pre-Review, Review, Post-Review.</li>
+    </ol>
+
+    <h3>Mode Toggle</h3>
+    <p>At the top of the workbook, you'll see two modes:</p>
+    <ul>
+      <li><strong>📋 Manage</strong> — View and manage all team data, schedules, and workbook tools.</li>
+      <li><strong>📝 My Notes</strong> — Switch to POD view to enter your own observations (same as what reviewers see).</li>
+    </ul>
+
+    <h3>Multi-Office Reviews</h3>
+    <p>If your review covers multiple offices, use the <strong>office buttons</strong> at the top to switch between offices. Each office has its own data, schedule, and roster.</p>
+
+    <!-- 17. LEAD PRE-REVIEW -->
+    <h2 id="lead-prereview">17. Lead: Pre-Review Phase</h2>
+    <p>Prepare everything before the review begins.</p>
+
+    <h3>Sub-Tabs Available</h3>
+
+    <h4>Information (Calendar &amp; Documents)</h4>
+    <ul>
+      <li>View the review calendar with key dates and milestones.</li>
+      <li>Upload reference documents (PDF, Word, Excel, images) organized by category.</li>
+    </ul>
+
+    <h4>Office Schedule (Roster)</h4>
+    <ol>
+      <li>Upload a <strong>WebCOINS export</strong> file (.xls) — the Employee/Job List for Function 4.</li>
+      <li>The system parses employee names, pay levels, start times, and seniority data.</li>
+      <li>Optionally upload a <strong>TACS Clock Ring CSV</strong> to compare actual vs. scheduled start times.</li>
+    </ol>
+
+    <div class="help-note">
+      <strong>💡 WebCOINS Export:</strong> In WebCOINS, navigate to Employee/Job List → Function 4. Export should include: Pay Level, Non-Scheduled Days, Seniority Date, Seniority Number, and Start Times.
+    </div>
+
+    <h4>Schedule Builder</h4>
+    <ul>
+      <li>Auto-generates a review schedule from the office roster start times.</li>
+      <li>Reviewers arrive <strong>10 minutes before</strong> each employee's start time.</li>
+      <li>Toggle between <strong>Bid Times</strong> and <strong>Actual BT</strong> (from TACS clock ring data).</li>
+      <li>Add reviewer rows, reset the schedule, and export.</li>
+    </ul>
+
+    <h4>Assign Review Team</h4>
+    <ul>
+      <li>Search for existing users by last name and assign them to the review.</li>
+      <li>Create new user accounts directly from this panel.</li>
+      <li>Auto-formatted names: "LAST, FIRST" with default password.</li>
+    </ul>
+
+    <h4>Travel (Review Lead Only)</h4>
+    <ul>
+      <li>Set an optional <strong>hotel booking link</strong> for the team.</li>
+      <li>Import travelers from the Schedule tab or add individually.</li>
+      <li>Track who has responded to the travel survey.</li>
+      <li>Build transportation groups — assign driver/Uber Pool groups.</li>
+      <li>Use <strong>"Auto-Group"</strong> to automatically group travelers by arrival time.</li>
+    </ul>
+
+    <h4>Schedule Email</h4>
+    <ul>
+      <li>Build and send three types of schedule emails:
+        <ol>
+          <li><strong>Review Schedule</strong> — assignment details for the team</li>
+          <li><strong>Daily Trips</strong> — transportation groups for each day</li>
+          <li><strong>Airport Schedule</strong> — flight pickup/dropoff details</li>
+        </ol>
+      </li>
+      <li>Auto-populated To/CC fields, "📧 Open in Outlook" integration.</li>
+    </ul>
+
+    <h4>Finalize (Review Lead Only)</h4>
+    <ul>
+      <li>Run a <strong>Pre-Review Checklist</strong> that scans for incomplete setup items.</li>
+      <li>Click flagged items to navigate directly to the issue.</li>
+    </ul>
+
+    <!-- 18. LEAD REVIEW -->
+    <h2 id="lead-review">18. Lead: Review Phase</h2>
+    <p>Manage and monitor the review while it's in progress.</p>
+
+    <h3>Sub-Tabs Available</h3>
+
+    <h4>TACS Data (Clock Rings)</h4>
+    <ul>
+      <li>Upload a <strong>TACS CSV export</strong> to import employee clock ring data.</li>
+      <li>Clerks and Mail Handlers are auto-detected by D/A code matching.</li>
+      <li>Flags employees who are on the clock but not in the office roster.</li>
+    </ul>
+
+    <h4>CSAW / DUT</h4>
+    <ul>
+      <li><strong>CSAW Earned Hours</strong> — grid input for LDCs 41–48 by Day 1 and Day 2.</li>
+      <li><strong>DUT / POBUT</strong> — text fields for daily entry.</li>
+    </ul>
+
+    <h4>Questionnaire</h4>
+    <ul>
+      <li>Full questionnaire covering all LDCs (unlike the POD version which filters by observed LDCs).</li>
+    </ul>
+
+    <h4>Timelines</h4>
+    <ul>
+      <li><strong>Observation Timelines</strong> — visual rollup showing all reviewers' observation timelines overlapping on a shared time axis.</li>
+      <li>Filter by: <strong>Craft</strong> (Clerk / Mail Handler), <strong>Day</strong> (1 / 2), <strong>Reviewer</strong> (all or individual).</li>
+      <li>Click <strong>"Refresh"</strong> to load/update the view.</li>
+      <li>Color-coded blocks with tooltips showing observation details.</li>
+    </ul>
+
+    <h4>Status</h4>
+    <ul>
+      <li><strong>Reviewer Status Table</strong> — shows Day 1/Day 2 submission status for every assigned reviewer.</li>
+      <li>Status indicators: Not Started, ⏳ Draft, ✓ Submitted.</li>
+      <li>Error count column flags data quality issues.</li>
+      <li><strong>Click any reviewer's day status or action button</strong> to open their notes for review/editing.</li>
+    </ul>
+
+    <div class="help-tip">
+      <strong>✅ Reviewing POD Data:</strong> In the Status tab, click a reviewer's Day 1 or Day 2 link to open their observation data. A yellow banner will show "Viewing [Name]'s notes (Lead Edit Mode)". Click "← Back to Workbook" to return.
+    </div>
+
+    <h4>My Notes</h4>
+    <ul>
+      <li>View the current office and your own observation status (Day 1 / Day 2).</li>
+      <li><strong>Clerk Notes by Reviewer</strong> — click any reviewer card to preview their observations in a popup.</li>
+      <li><strong>Mail Handler Notes</strong> — view MH observations by employee.</li>
+    </ul>
+
+    <!-- 19. LEAD POST-REVIEW -->
+    <h2 id="lead-postreview">19. Lead: Post-Review Phase</h2>
+
+    <h3>Sub-Tabs Available</h3>
+
+    <h4>Expense Report</h4>
+    <ul>
+      <li>Summary view showing which team members have confirmed their expense reports.</li>
+      <li><strong>"📧 Remind Pending"</strong> — send reminders to team members who haven't confirmed.</li>
+      <li>Your own confirmation checkbox + Confirm button.</li>
+    </ul>
+
+    <h4>Workbook Review</h4>
+    <ul>
+      <li><strong>Upload Workbook</strong> — drag &amp; drop or browse to upload the completed workbook file (.xlsx, .xlsb, .xls, .csv).</li>
+      <li><strong>Review Status Pipeline</strong>:
+        <ol>
+          <li>Workbook Uploaded</li>
+          <li>Review Lead Reviewed</li>
+          <li>Approved</li>
+        </ol>
+      </li>
+      <li><strong>Lead Actions</strong>: Mark as Reviewed, ✓ Approve, ↩ Send Back (with return note), ⟲ Reset Status.</li>
+    </ul>
+
+    <!-- 20. ADMIN PANEL -->
+    <h2 id="admin">20. Admin Panel</h2>
+    <p>Access: <strong>Admin</strong> users see all tabs. <strong>Review Leads</strong> see the Reviews tab only.</p>
+
+    <h3>Manage My Reviews Tab</h3>
+    <ol>
+      <li><strong>Create a Review</strong>:
+        <ul>
+          <li>Enter review name, start/end dates.</li>
+          <li>Add offices using the office picker (search by name or finance number). Each office can have its own date range.</li>
+          <li>Assign leadership: select a user and role (Workbook Lead or Review Lead).</li>
+          <li>Click "Create Review".</li>
+        </ul>
+      </li>
+      <li><strong>All Reviews Table</strong>: view, edit, or delete existing reviews.</li>
+      <li><strong>Edit Review</strong>: modify any review details — name, dates, offices, and team assignments.</li>
+    </ol>
+
+    <h3>Manage Users Tab (Admin Only)</h3>
+    <ul>
+      <li><strong>Bulk Create Users</strong>: paste a list of names (one per line), select a role, and click "Add Users". Usernames and default passwords are auto-generated.</li>
+      <li><strong>All Users Table</strong>: view all users with their role, assigned offices, and status. Edit or delete any user.</li>
+      <li><strong>Edit User</strong>: change display name, email, password, role, or assigned offices.</li>
+      <li><strong>"Reset to Default Password"</strong>: resets a user's password to lowercase name, no spaces.</li>
+    </ul>
+
+    <h3>Manage Requests Tab (Admin Only)</h3>
+    <ul>
+      <li>Review and approve/deny access requests from users (role changes, review access).</li>
+    </ul>
+
+    <h3>System Tab</h3>
+    <ul>
+      <li><strong>Go Live — Reset for Production</strong>: Keeps all user accounts but resets passwords to defaults and deletes all review/observation data. Type "GO LIVE" to confirm.</li>
+      <li><strong>Full Factory Reset</strong>: Deletes everything including user accounts. Type "DELETE" to confirm.</li>
+    </ul>
+
+    <div class="help-warn">
+      <strong>⚠️ Warning:</strong> Both reset actions are <strong>permanent and cannot be undone</strong>. Make sure to export any needed data before resetting.
+    </div>
+
+    <!-- 21. SETTINGS -->
+    <h2 id="settings">21. Settings &amp; Preferences</h2>
+    <p>Access Settings from the gear icon in the navigation bar or the Debug Drawer.</p>
+
+    <h3>Available Settings</h3>
+    <ul>
+      <li><strong>Profile</strong> — View your name, username, access level, and account creation date.</li>
+      <li><strong>Theme</strong> — Toggle between ☀️ Light and 🌖 Dark mode (dark mode is the default).</li>
+      <li><strong>Display Preferences</strong>:
+        <ul>
+          <li>Compact View — reduces spacing in tables and cards</li>
+          <li>Show Finance Numbers — display finance #s on review cards</li>
+          <li>Animations — enable/disable page transition effects</li>
+        </ul>
+      </li>
+      <li><strong>Change Password</strong> — Enter current password, then new password (minimum 4 characters).</li>
+      <li><strong>Request Access Level Change</strong> — Submit a request to the admin for a different system role.</li>
+      <li><strong>Data Export</strong> — Download all your observation data as a JSON file.</li>
+    </ul>
+
+    <!-- 22. FAQ -->
+    <h2 id="faq">22. FAQ &amp; Troubleshooting</h2>
+
+    <h3>General</h3>
+
+    <h4>Q: I can't see my review on the Home page.</h4>
+    <p>Your Review Lead needs to assign you to the review. Contact them to verify your assignment. Also check that the review dates haven't expired.</p>
+
+    <h4>Q: My data disappeared!</h4>
+    <p>Data is stored locally in your browser. If you cleared your browser data, history, or cache, the data may have been deleted. Avoid clearing browser data during an active review. Always use the same browser/computer.</p>
+
+    <h4>Q: I can't edit my review — it says "View Summary" only.</h4>
+    <p>The review has expired. POD data locks 1 week after the review end date. Contact your admin if you need an extension.</p>
+
+    <h4>Q: I don't see all the tabs.</h4>
+    <p>Tabs are phase-dependent. Make sure you're in the correct phase (Pre-Review, Review, or Post-Review). Some tabs only appear during the Review phase.</p>
+
+    <h3>Data Entry</h3>
+
+    <h4>Q: My time entries show errors in End of Day.</h4>
+    <p>Check for: missing Begin/End times, time gaps between entries, missing LDC codes, and missing work quality assessments. Click the flag in End of Day to jump to the issue.</p>
+
+    <h4>Q: How do I switch between Day 1 and Day 2?</h4>
+    <p>Use the <strong>Day 1 / Day 2</strong> toggle buttons below the Observation Info bar. Each day has completely separate data.</p>
+
+    <h4>Q: Can I go back and edit previous entries?</h4>
+    <p>Yes, as long as the review window is still open. Just click "Edit Day 1" or "Edit Day 2" from the Home page.</p>
+
+    <h3>Leads</h3>
+
+    <h4>Q: How do I view a reviewer's data?</h4>
+    <p>Go to the <strong>Status</strong> sub-tab in your workbook's Review phase. Click any reviewer's day link or the D1/D2 action buttons to open their notes in edit mode.</p>
+
+    <h4>Q: How do I get back to my workbook after viewing a reviewer's data?</h4>
+    <p>Click the <strong>"← Back to Workbook"</strong> button in the yellow banner at the top of the page.</p>
+
+    <h4>Q: How do I add more team members to my review?</h4>
+    <p>Go to Pre-Review → Assign Review Team, or edit the review from the Admin panel.</p>
+
+    <h3>Technical</h3>
+
+    <h4>Q: Does this work on mobile?</h4>
+    <p>Yes — the layout is responsive. However, data entry is much easier on a laptop or desktop with a full keyboard.</p>
+
+    <h4>Q: Does data sync between devices?</h4>
+    <p>No — all data is stored locally in your browser. You must use the same browser on the same computer each time. Do not switch browsers mid-review.</p>
+
+    <h4>Q: Which browsers are supported?</h4>
+    <p>Chrome (recommended), Microsoft Edge, and Firefox. Internet Explorer is not supported.</p>
+
+    <div class="help-note">
+      <strong>💡 Need more help?</strong> Contact your Review Lead or email <a href="mailto:preston.k.carney@usps.gov">preston.k.carney@usps.gov</a> for technical support.
+    </div>
+
+  </div>
+
+  <script src="js/sync.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (function() {
+    var user = Auth.requireAuth();
+    if (!user) return;
+    Auth.renderNavbar();
+  })();
+  </script>
+</body>
+</html>

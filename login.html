@@ -1,0 +1,142 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program &mdash; Login</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+  </nav>
+
+  <main class="container login-container">
+    <!-- Login Form -->
+    <section class="card login-card" id="login-form">
+      <h2>Sign In</h2>
+      <p class="setup-subtitle">Enter your credentials to continue.</p>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="login-user">Name</label>
+          <input type="text" id="login-user" autocomplete="username" autofocus>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="login-pass">Password</label>
+          <input type="password" id="login-pass" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="setup-actions">
+        <button id="login-btn" class="btn btn-primary btn-lg">Sign In</button>
+      </div>
+      <p id="login-error" class="status-msg error" hidden></p>
+    </section>
+
+    <!-- Force Password Change Form (hidden) -->
+    <section class="card login-card" id="pw-change-form" hidden>
+      <h2>Change Your Password</h2>
+      <p class="setup-subtitle">Your account requires a password change before continuing.</p>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="new-pass">New Password</label>
+          <input type="password" id="new-pass" autocomplete="new-password" autofocus>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="confirm-pass">Confirm Password</label>
+          <input type="password" id="confirm-pass" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="setup-actions">
+        <button id="pw-change-btn" class="btn btn-primary btn-lg">Set Password &amp; Continue</button>
+      </div>
+      <p id="pw-error" class="status-msg error" hidden></p>
+    </section>
+  </main>
+
+  <script src="js/sync.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function() {
+      Auth.bootstrap();
+      var session = Auth.currentUser();
+      if (session && !session.mustChangePassword) {
+        window.location.href = 'index.html';
+        return;
+      }
+      // If must change password, show that form immediately
+      if (session && session.mustChangePassword) {
+        showPwChange(session);
+        return;
+      }
+
+      var userIn   = document.getElementById('login-user');
+      var passIn   = document.getElementById('login-pass');
+      var btn      = document.getElementById('login-btn');
+      var errEl    = document.getElementById('login-error');
+
+      function doLogin() {
+        errEl.hidden = true;
+        var u = userIn.value.trim();
+        var p = passIn.value;
+        if (!u || !p) {
+          errEl.textContent = 'Please enter both name and password.';
+          errEl.hidden = false;
+          return;
+        }
+        var result = Auth.login(u, p);
+        if (result) {
+          if (result.mustChangePassword) {
+            showPwChange(result);
+          } else {
+            window.location.href = 'index.html';
+          }
+        } else {
+          errEl.textContent = 'Invalid name or password.';
+          errEl.hidden = false;
+          passIn.value = '';
+          passIn.focus();
+        }
+      }
+
+      btn.addEventListener('click', doLogin);
+      passIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+      userIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') passIn.focus(); });
+
+      function showPwChange(loggedInUser) {
+        document.getElementById('login-form').hidden = true;
+        var pwForm    = document.getElementById('pw-change-form');
+        var newPassIn = document.getElementById('new-pass');
+        var confIn    = document.getElementById('confirm-pass');
+        var pwBtn     = document.getElementById('pw-change-btn');
+        var pwErr     = document.getElementById('pw-error');
+        pwForm.hidden = false;
+        newPassIn.focus();
+
+        function doChange() {
+          pwErr.hidden = true;
+          var np = newPassIn.value;
+          var cp = confIn.value;
+          if (!np || np.length < 3) {
+            pwErr.textContent = 'Password must be at least 3 characters.';
+            pwErr.hidden = false; return;
+          }
+          if (np !== cp) {
+            pwErr.textContent = 'Passwords do not match.';
+            pwErr.hidden = false; return;
+          }
+          Auth.updateUser(loggedInUser.id, { password: np, mustChangePassword: false });
+          window.location.href = 'index.html';
+        }
+
+        pwBtn.addEventListener('click', doChange);
+        confIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doChange(); });
+      }
+    })();
+  </script>
+</body>
+</html>

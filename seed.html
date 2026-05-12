@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Seed Users</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container" style="margin-top:2rem;">
+    <section class="card">
+      <h2>Seeding POD Accounts...</h2>
+      <pre id="log" style="white-space:pre-wrap;font-size:0.85rem;max-height:60vh;overflow:auto;"></pre>
+      <div style="margin-top:1rem;">
+        <a href="admin.html" class="btn btn-primary">Go to Admin Panel &rarr;</a>
+      </div>
+    </section>
+  </main>
+  <script src="js/auth.js"></script>
+  <script>
+    var log = document.getElementById('log');
+    function out(msg) { log.textContent += msg + '\n'; }
+
+    // Ensure logged in as admin
+    var user = Auth.currentUser();
+    if (!user || user.role !== 'admin') {
+      out('ERROR: You must be logged in as admin first. Go to admin.html, log in, then come back here.');
+    } else {
+      var allPods = [
+        // ===== SOUTHERN (48) =====
+        { name: 'Acosta, Edili M', email: 'Edili.M.Acosta@usps.gov' },
+        { name: 'Allen, Tiffany A', email: 'tiffany.a.allen@usps.gov' },
+        { name: 'Baca, Angela', email: 'Angela.P.Baca@usps.gov' },
+        { name: 'Boudreaux, Rachelle M', email: 'Rachelle.M.Boudreaux@usps.gov' },
+        { name: 'Bracken, Andrea', email: 'Andrea.S.Bracken@usps.gov' },
+        { name: 'Brooks, Angela', email: 'Angela.M.Brooks@usps.gov' },
+        { name: 'Bustamante, Eliza M', email: 'eliza.m.bustamante@usps.gov' },
+        { name: 'Byer, Stacy Ann S', email: 'Stacyann.S.Byer@usps.gov' },
+        { name: 'Chapman, Natalie N', email: 'Natalie.N.Chapman@usps.gov' },
+        { name: 'Christian, Erica', email: 'Erica.N.Christian@usps.gov' },
+        { name: 'Coleman-James, Krystal D', email: 'Krystal.D.Coleman@usps.gov' },
+        { name: 'Crane, Clay J', email: 'Clarence.J.Crane@usps.gov' },
+        { name: 'Crocker, Carol A', email: 'Carol.A.Crocker@usps.gov' },
+        { name: 'Cunningham-Hooper, Gena L', email: 'Gena.L.Hooper@usps.gov' },
+        { name: 'Dulka, Eric', email: 'Eric.Dulka@usps.gov' },
+        { name: 'Falkner, Evelyn', email: 'Evelyn.L.Falkner@usps.gov' },
+        { name: 'Fitzpatrick, Kevin M', email: 'Kevin.M.Fitzpatrick@usps.gov' },
+        { name: 'Fonseca, Alexander R', email: 'Alexander.R.Fonseca@usps.gov' },
+        { name: 'Fox-Pruitt, Jennifer D', email: 'Jennifer.D.FoxPruitt@usps.gov' },
+        { name: 'Gassiott, Michael A', email: 'Michael.A.Gassiott@usps.gov' },
+        { name: 'Glover, Dominique', email: 'Dominique.Glover@usps.gov' },
+        { name: 'Griffin, Thelma J', email: 'thelma.j.griffin@usps.gov' },
+        { name: 'Groshko, Debra E', email: 'Debra.E.Groshko@usps.gov' },
+        { name: 'Haden, Bobbi J', email: 'barbara.j.haden@usps.gov' },
+        { name: 'Harp, Rene', email: 'Sharon.R.Harp@usps.gov' },
+        { name: 'Jackson, Shannon T', email: 'Shannon.T.Wilson@usps.gov' },
+        { name: 'King, Hannah A', email: 'Hannah.A.King@usps.gov' },
+        { name: 'Kosman, Cassandra', email: 'Cassandra.Kosman@usps.gov' },
+        { name: 'Kouns, Chantel D', email: 'Chantel.D.Kouns@usps.gov' },
+        { name: 'Lujan, Cathleen C', email: 'Cathleen.C.Lujan@usps.gov' },
+        { name: 'Mathis, Christopher E', email: 'Christopher.E.Mathis@usps.gov' },
+        { name: 'McCartney, Dawn T', email: 'Dawn.T.Mccartney@usps.gov' },
+        { name: 'Moyer, David G', email: 'David.G.Moyer@usps.gov' },
+        { name: 'Njattumkala, George', email: 'George.Njattumkala@usps.gov' },
+        { name: 'Parish, Jacqueline C', email: 'Jacqueline.C.Parish@usps.gov' },
+        { name: 'Parra, Viviana', email: 'Viviana.Parra@usps.gov' },
+        { name: 'Person, Kimberly N', email: 'Kimberly.N.Person@usps.gov' },
+        { name: 'Riley, Bonita R', email: 'Bonita.R.Johnson@usps.gov' },
+        { name: 'Simmons, Lacy W', email: 'Falascia.W.Simmons@usps.gov' },
+        { name: 'Simms, Lyndsey', email: 'Lyndsey.Simms@usps.gov' },
+        { name: 'Simpson, Larry B', email: 'Larry.B.Simpson@usps.gov' },
+        { name: 'Sorvari, Clinton R', email: 'Clinton.R.Sorvari@usps.gov' },
+        { name: 'Steedley, Tracy L', email: 'tracy.l.steedley@usps.gov' },
+        { name: 'Torain, Shirell', email: 'Shirell.Torain@usps.gov' },
+        { name: 'Vasquez, Daniel A', email: 'Daniel.A.Vasquez@usps.gov' },
+        { name: 'Vautour, Susan A', email: 'Susan.A.Vautour@usps.gov' },
+        { name: 'Velez, Jeanette', email: 'Jeanette.Velez@usps.gov' },
+        { name: 'Williams, Derrick', email: 'Derrick.Williams@usps.gov' },
+        // ===== WESTPAC (31) =====
+        { name: 'Anson, Molley A', email: 'Molley.A.Anson@usps.gov' },
+        { name: 'Archibeque, Darlene', email: 'Darlene.Archibeque@usps.gov' },
+        { name: 'Carney, Preston K', email: 'Preston.K.Carney@usps.gov' },
+        { name: 'Castro, Alicia', email: 'Alicia.M.Castro@usps.gov' },
+        { name: 'DelCastillo, Jorge', email: 'Jorge.Delcastillo@usps.gov' },
+        { name: 'Domingo, Julius C', email: 'JuliusCesar.C.Domingo@usps.gov' },
+        { name: 'Gabot, Alyssa', email: 'Alyssa.D.Gabot@usps.gov' },
+        { name: 'Garcia Jr, Leon L', email: 'Leon.L.Garcia@usps.gov' },
+        { name: 'Garcia, Mechelle', email: 'Mechelle.Garcia@usps.gov' },
+        { name: 'Garza Jr, Roberto B', email: 'Roberto.Garza@usps.gov' },
+        { name: 'Hay, Jason C', email: 'Jason.C.Hay@usps.gov' },
+        { name: 'Hernandez, Elisa K', email: 'Elisa.K.Hernandez@usps.gov' },
+        { name: 'Janeo, Desiree Anne', email: 'DesireeAnne.Janeo@usps.gov' },
+        { name: 'Kaur, Harjot P', email: 'Harjot.P.Kaur@usps.gov' },
+        { name: 'Laing, Michelle', email: 'Penny.M.Laing@usps.gov' },
+        { name: 'Laygo, Leila B', email: 'leila.b.laygo@usps.gov' },
+        { name: 'Lite, Cheryl A', email: 'Cheryl.A.Lite@usps.gov' },
+        { name: 'Lopez, Robby A', email: 'Robby.A.Lopez@usps.gov' },
+        { name: 'Marshall, Scott C', email: 'Scott.C.Marshall@usps.gov' },
+        { name: 'Munoz-Williams, Brenda P', email: 'Brenda.P.Munoz-Williams@usps.gov' },
+        { name: 'Ramirez, Meredith S', email: 'Meredith.S.Ramirez@usps.gov' },
+        { name: 'Reaves, Kyle J', email: 'Kyle.J.Reaves@usps.gov' },
+        { name: 'Rodriguez, Sandra E', email: 'Sandra.E.Rodriguez@usps.gov' },
+        { name: 'Rohmer, Kim', email: 'Kim.Rohmer@usps.gov' },
+        { name: 'Shvets, Tenita Q', email: 'Tenita.Q.Shvets@usps.gov' },
+        { name: 'Taylor, Mischa E', email: 'Mischa.E.Taylor@usps.gov' },
+        { name: 'Tolosa, Mary Grace C', email: 'MaryGrace.Tolosa@usps.gov' },
+        { name: 'Umana, Jacky', email: 'Jacqueline.Umana@usps.gov' },
+        { name: 'Wanca, Willy', email: 'Edward.J.Wanca@usps.gov' },
+        { name: 'Williams, Jans A', email: 'Jans.A.Williams@usps.gov' },
+        { name: 'Ximenez, Karen M', email: 'Karen.M.Ximenez@usps.gov' },
+        // ===== CENTRAL (31) =====
+        { name: 'Alt, Susan E', email: 'Susan.E.Alt@usps.gov' },
+        { name: 'Baker, Tanzzy A', email: 'Tanzzy.A.Baker@usps.gov' },
+        { name: 'Barber, Katherine A', email: 'Katherine.A.Barber@usps.gov' },
+        { name: 'Bays, Judy F', email: 'Judy.F.Bays@usps.gov' },
+        { name: 'Burns, Antoine C', email: 'Antoine.C.Burns@usps.gov' },
+        { name: 'Cheon, Jae H', email: 'Jae.H.Cheon@usps.gov' },
+        { name: 'Dankof, Debra M', email: 'Debra.M.Dankof@usps.gov' },
+        { name: 'Evans, Rochelle T', email: 'Rochelle.T.Evans@usps.gov' },
+        { name: 'Finney, Lori M', email: 'lori.m.finney@usps.gov' },
+        { name: 'Haizlip, Norman', email: 'Norman.R.Haizlip@usps.gov' },
+        { name: 'Hammar, James P', email: 'James.P.Hammar3@usps.gov' },
+        { name: 'Haymer, Joshualyn', email: 'Joshualyn.D.Haymer@usps.gov' },
+        { name: 'Hernandez, Victoria', email: 'Victoria.A.Hernandez@usps.gov' },
+        { name: 'Jewel, Jeri L', email: 'Jeri.L.Jewel@usps.gov' },
+        { name: 'Johnson, Kelly L', email: 'Kelly.L.Johnson2@usps.gov' },
+        { name: 'Johnson, Robin C', email: 'Robin.C.Johnson@usps.gov' },
+        { name: 'Johnston, Jennifer D', email: 'Jennifer.D.Johnston@usps.gov' },
+        { name: 'Kidd, Brianna', email: 'Brianna.Kidd@usps.gov' },
+        { name: 'Lesperance, Diane R', email: 'Diane.R.Lesperance@usps.gov' },
+        { name: 'Lloyd, Danielle G', email: 'Danielle.G.Lloyd@usps.gov' },
+        { name: 'Lutes-Kurtzweil, Renee', email: 'Renee.Lutes-Kurtzweil@usps.gov' },
+        { name: 'Mason-Dlakiya, Tanya', email: 'Tanya.Mason-Dlakiya@usps.gov' },
+        { name: 'McCann, Kris', email: 'kristine.k.mccann@usps.gov' },
+        { name: 'Perkins, Desiree L', email: 'Desiree.L.Perkins@usps.gov' },
+        { name: 'Roberts, Brandon S', email: 'Brandon.S.Roberts@usps.gov' },
+        { name: 'Schierholz, Ryan A', email: 'Ryan.A.Schierholz@usps.gov' },
+        { name: 'Schubert, Scott', email: 'Scott.L.Schubert@usps.gov' },
+        { name: 'Stilley, Brandy E', email: 'Brandy.E.Stilley@usps.gov' },
+        { name: 'Stocking, Taylor A', email: 'Taylor.Stocking@usps.gov' },
+        { name: 'Wimmer, Shannon', email: 'Shannon.Wimmer@usps.gov' },
+        { name: 'Wrazidlo, Butch D', email: 'Butch.D.Wrazidlo@usps.gov' },
+        // ===== ATLANTIC (50) =====
+        { name: 'Alston, Stacy R', email: 'Stacy.R.Alston@usps.gov' },
+        { name: 'Barnes, Shena M', email: 'Shena.M.Barnes@usps.gov' },
+        { name: 'Barr, Thomas W', email: 'Thomas.W.Barr@usps.gov' },
+        { name: 'Cabler-Clarke, Denise', email: 'Denise.Cabler-Clarke@usps.gov' },
+        { name: 'Chopra, Surekha', email: 'Surekha.Chopra@usps.gov' },
+        { name: 'Coates, Jenny', email: 'Jenny.Coates@usps.gov' },
+        { name: 'Collins, Kevin S', email: 'Kevin.S.Collins@usps.gov' },
+        { name: 'Dadacay, Almavilla M', email: 'Almavilla.M.Dadacay@usps.gov' },
+        { name: 'Danzo, Richard', email: 'Richard.Danzo@usps.gov' },
+        { name: 'Drayton, Monique P', email: 'Monique.P.Drayton-Ridley@usps.gov' },
+        { name: 'Dunton, Teri', email: 'Teresa.M.Dunton@usps.gov' },
+        { name: 'Fitzgerald, Mary Ann', email: 'Maryann.Fitzgerald@usps.gov' },
+        { name: 'Germain-Wesley, Rolande', email: 'Rolande.Germain-Wesley@usps.gov' },
+        { name: 'Grandy, Ayofemi C', email: 'Ayofemi.C.Grandy@usps.gov' },
+        { name: 'Grayson, Scott L', email: 'Scott.L.Grayson@usps.gov' },
+        { name: 'Hamilton, Saige', email: 'Saige.Hamilton@usps.gov' },
+        { name: 'Hanlon, Robert S', email: 'Robert.S.Hanlon@usps.gov' },
+        { name: 'Hart, April E', email: 'april.e.hart@usps.gov' },
+        { name: 'Helbig, Matthew', email: 'Matthew.Helbig@usps.gov' },
+        { name: 'Hernandez, Vadessa', email: 'Vadessa.Hernandez@usps.gov' },
+        { name: 'Hussey, Sharon L', email: 'Sharon.L.Hussey@usps.gov' },
+        { name: 'Johnson, Annette L', email: 'Annette.L.Johnson@usps.gov' },
+        { name: 'Johnson, Dannette A', email: 'Dannette.A.Johnson@usps.gov' },
+        { name: 'Keyes, Bree', email: 'JonBree.B.Keyes@usps.gov' },
+        { name: 'King II, Thomas C', email: 'Thomas.C.King@usps.gov' },
+        { name: 'Lam, Andrew N', email: 'Andrew.N.Lam@usps.gov' },
+        { name: 'Lawson, Emma M', email: 'Emma.M.Lawson@usps.gov' },
+        { name: 'LeGrande, Ayana M', email: 'Ayana.M.Legrande@usps.gov' },
+        { name: 'Lozada, Melissa M', email: 'Melissa.M.Lozada@usps.gov' },
+        { name: 'Matusky, Melody N', email: 'Melody.N.Matusky@usps.gov' },
+        { name: 'Medina, Antonio', email: 'ANTONIO.MEDINA@usps.gov' },
+        { name: 'Medina, Julie', email: 'julie.medina@usps.gov' },
+        { name: 'Moss, Selina R', email: 'Selina.R.Moss@usps.gov' },
+        { name: 'Mossey, Nathan', email: 'Nathan.Mossey@usps.gov' },
+        { name: 'Mucciarone, Andrea L', email: 'Andrea.L.Mucciarone@usps.gov' },
+        { name: 'Passero, Tatiana', email: 'Tatiana.Passero@usps.gov' },
+        { name: 'Pietrantonio Jr, Joseph E', email: 'Joseph.E.Pietrantonio@usps.gov' },
+        { name: 'Quinno, Brandon', email: 'Brandon.Quinno@usps.gov' },
+        { name: 'Ramirez, Jose J', email: 'Jose.J.Ramirez@usps.gov' },
+        { name: 'Rayeski, Kimberly A', email: 'Kimberly.A.Rayeski@usps.gov' },
+        { name: 'Rodriguez, Evangelina C', email: 'Evangelina.C.Rodriguez@usps.gov' },
+        { name: 'Showell, Latonya W', email: 'Latonya.W.Showell@usps.gov' },
+        { name: 'Smith, Katina', email: 'katina.smith@usps.gov' },
+        { name: 'Thomas, Justin', email: 'David.J.Thomas@usps.gov' },
+        { name: 'Williams, Mark C', email: 'Mark.C.Williams@usps.gov' },
+        { name: 'Wolf, George A', email: 'George.A.Wolf@usps.gov' },
+        { name: 'Wollenberg, Tammy A', email: 'Tammy.A.Wollenberg@usps.gov' },
+        { name: 'Woo, Jenny', email: 'JWoo@uspis.gov' },
+        { name: 'Woods, Anitra S', email: 'Anitra.S.Woods@usps.gov' }
+      ];
+
+      var result = Auth.bulkCreate(allPods, 'reviewer');
+      out('Created: ' + result.created.length + ' POD accounts');
+      if (result.errors.length) {
+        out('\nSkipped (' + result.errors.length + '):');
+        result.errors.forEach(function(e) { out('  • ' + e); });
+      }
+      out('\nDone! Click the button below to go to the Admin Panel.');
+    }
+  </script>
+</body>
+</html>

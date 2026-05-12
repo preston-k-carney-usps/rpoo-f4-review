@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html><head><title>Seed Travel Surveys</title></head>
+<body style="font-family:monospace;padding:2rem;background:#1a1a2e;color:#e0e0e0;">
+<h2>Seed Travel Survey Responses</h2>
+<button id="run" style="padding:8px 20px;font-size:1rem;cursor:pointer;background:#4ade80;color:#000;border:none;border-radius:6px;">Run Seed</button>
+<div id="output" style="margin-top:1rem;"></div>
+<script>
+document.getElementById('run').addEventListener('click', function() {
+  var out = document.getElementById('output');
+  out.innerHTML = '';
+  function log(msg) { out.innerHTML += '<div>' + msg + '</div>'; }
+
+  // Find all travel keys
+  var travelKeys = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (k.indexOf('clerk_obs_travel_survey_') === 0) travelKeys.push(k);
+  }
+
+  if (travelKeys.length === 0) {
+    log('<strong style="color:red;">No travel survey keys found.</strong>');
+    log('<br>All clerk_obs keys:');
+    for (var j = 0; j < localStorage.length; j++) {
+      var key = localStorage.key(j);
+      if (key.indexOf('clerk_obs_') === 0) log('&nbsp;&nbsp;' + key);
+    }
+    return;
+  }
+
+  var phones = ['814-555-0101','814-555-0202','814-555-0303','814-555-0404',
+                '814-555-0505','814-555-0606','814-555-0707','814-555-0808',
+                '814-555-0909','814-555-1010','814-555-1111','814-555-1212',
+                '724-555-0101','724-555-0202','724-555-0303','724-555-0404',
+                '412-555-0101','412-555-0202','412-555-0303','412-555-0404',
+                '717-555-0101','717-555-0202','717-555-0303','717-555-0404',
+                '215-555-0101','215-555-0202','215-555-0303','215-555-0404',
+                '610-555-0101','610-555-0202','610-555-0303','610-555-0404'];
+  var airlines = ['Delta','United','American','Southwest','JetBlue','Spirit'];
+
+  travelKeys.forEach(function(tk) {
+    log('<br><strong>Key: ' + tk + '</strong>');
+    var data;
+    try { data = JSON.parse(localStorage.getItem(tk)); } catch(e) { log('  Parse error'); return; }
+    if (!data || !data.assignments || data.assignments.length === 0) {
+      log('  No assignments found');
+      return;
+    }
+
+    if (!data.responses) data.responses = {};
+    log('  Assignments: ' + data.assignments.length);
+    log('  Existing responses: ' + Object.keys(data.responses).length);
+
+    // Dump first assignment to check structure
+    var first = data.assignments[0];
+    log('  Sample assignment: ' + JSON.stringify(first));
+
+    // Find review dates
+    var reviewId = tk.replace('clerk_obs_travel_survey_', '');
+    var rev = null;
+    try {
+      var reviews = JSON.parse(localStorage.getItem('reviews')) || [];
+      reviews.forEach(function(r) { if (r.id === reviewId) rev = r; });
+    } catch(e) {}
+
+    var startDate = '2026-05-19';
+    var endDate = '2026-05-21';
+    if (rev) {
+      startDate = rev.startDate || startDate;
+      endDate = rev.endDate || endDate;
+      log('  Review: ' + (rev.name || reviewId) + ' (' + startDate + ' to ' + endDate + ')');
+    }
+
+    // Arrival = day before review, departure = day after
+    var arrD = new Date(startDate + 'T00:00:00');
+    arrD.setDate(arrD.getDate() - 1);
+    var arrDateStr = arrD.toISOString().split('T')[0];
+    var depD = new Date(endDate + 'T00:00:00');
+    depD.setDate(depD.getDate() + 1);
+    var depDateStr = depD.toISOString().split('T')[0];
+
+    var added = 0;
+    data.assignments.forEach(function(a, idx) {
+      // Use userId as the key — that's what the rollup uses
+      var respKey = a.userId;
+      if (!respKey) {
+        // If no userId, use name as fallback key
+        respKey = a.name;
+        log('  ⚠ No userId for ' + a.name + ', using name as key');
+      }
+
+      if (data.responses[respKey]) {
+        log('  ' + a.name + ' — already has response');
+        return;
+      }
+
+      var mode = (idx % 4 === 0) ? 'driving' : 'flying';
+      var phone = phones[idx % phones.length];
+      var response = {
+        mode: mode,
+        phone: phone,
+        hotelBooked: (idx % 3 !== 2),
+        submittedAt: new Date().toISOString()
+      };
+
+      if (mode === 'flying') {
+        var airline = airlines[idx % airlines.length];
+        var arrHour = 13 + (idx % 5);
+        var depHour = 7 + (idx % 4);
+        response.arrival = {
+          date: arrDateStr,
+          time: String(arrHour).padStart(2,'0') + ':' + (idx % 2 === 0 ? '00' : '30'),
+          airline: airline,
+          flight: airline.substring(0,2).toUpperCase() + String(1200 + idx * 37)
+        };
+        response.departure = {
+          date: depDateStr,
+          time: String(depHour).padStart(2,'0') + ':' + (idx % 2 === 0 ? '15' : '45'),
+          airline: airline,
+          flight: airline.substring(0,2).toUpperCase() + String(2400 + idx * 41)
+        };
+      }
+
+      data.responses[respKey] = response;
+      added++;
+      var icon = mode === 'driving' ? '🚗' : '✈️';
+      log('  <span style="color:#4ade80;">✓</span> ' + a.name + ' — ' + icon + ' ' + mode +
+        (mode === 'flying' ? ' (' + response.arrival.airline + ' #' + response.arrival.flight + ')' : '') +
+        ', hotel: ' + (response.hotelBooked ? 'yes' : 'no') +
+        ', key=' + respKey);
+    });
+
+    localStorage.setItem(tk, JSON.stringify(data));
+    log('  <strong style="color:#4ade80;">✅ Added ' + added + ' responses. Total: ' + Object.keys(data.responses).length + '</strong>');
+  });
+
+  log('<br><strong style="color:#4ade80;">Done! Go back to the Travel tab and refresh.</strong>');
+});
+</script>
+</body>
+</html>

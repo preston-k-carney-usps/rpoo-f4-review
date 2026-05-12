@@ -1,0 +1,539 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="summary.html">Review Dashboard</a>
+      <a href="help.html">Help</a>
+    </div>
+  </nav>
+
+  <main class="container" id="main-content"></main>
+
+  <script src="js/sync.js"></script>
+  <script src="js/offices.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/reviews.js"></script>
+  <script src="js/storage.js"></script>
+  <script>
+  (function() {
+    var user = Auth.requireAuth();
+    if (!user) return;
+    Auth.renderNavbar();
+
+    var main = document.getElementById('main-content');
+    var roleBadge = Auth.REVIEW_ROLE_LABELS || { clerk: 'Clerk Reviewer', mailhandler: 'Mail Handler Reviewer', lead: 'Workbook Lead', teamlead: 'Review Lead' };
+
+    // Load user's reviews
+    var myReviews;
+    var allReviewsList = Reviews.getAll();
+
+    // Everyone sees reviews they're assigned to
+    myReviews = allReviewsList.filter(function(r) {
+      return r.assignments.some(function(a) { return a.userId === user.id; }) ||
+             r.createdBy === user.id;
+    });
+
+    // Also include reviews where user is on the travel survey assignment list
+    var myRevIds = {};
+    myReviews.forEach(function(r) { myRevIds[r.id] = true; });
+    for (var tsi = 0; tsi < localStorage.length; tsi++) {
+      var tsKey = localStorage.key(tsi);
+      if (tsKey && tsKey.indexOf('clerk_obs_travel_survey_') === 0) {
+        try {
+          var tsData = JSON.parse(localStorage.getItem(tsKey));
+          if (tsData && tsData.assignments && tsData.assignments.some(function(a) { return a.userId === user.id; })) {
+            var tsRevId = tsKey.replace('clerk_obs_travel_survey_', '');
+            if (!myRevIds[tsRevId]) {
+              var tsRev = Reviews.getById(tsRevId);
+              if (tsRev) { myReviews.push(tsRev); myRevIds[tsRevId] = true; }
+            }
+          }
+        } catch(e) {}
+      }
+    }
+
+    // Debug mode fallback
+    if (myReviews.length === 0 && user._realRole === 'admin') {
+      myReviews = allReviewsList;
+    }
+    var allObs = Storage.hydrate(Storage.getAll());
+    var myObs = Auth.filterVisible(allObs);
+
+    // Filter out orphaned observations whose review no longer exists
+    var allReviewIds = {};
+    allReviewsList.forEach(function(r) { allReviewIds[r.id] = true; });
+    myObs = myObs.filter(function(o) { return !o.reviewId || allReviewIds[o.reviewId]; });
+
+    // Build dashboard based on access level
+    var html = '<div class="landing-hero">' +
+      '<h2>Welcome, ' + esc(user.displayName) + '</h2>' +
+      '<p>USPS Clerk Observation &amp; Review Tool</p>' +
+    '</div>';
+
+    // ---- Quick Actions ----
+    if (user.role === 'teamlead') {
+      html += '<h3 style="margin:1.5rem 0 0.5rem;">Quick Actions</h3>';
+      html += '<div class="landing-grid">';
+      html += '<a href="admin.html" class="landing-card landing-card-primary">' +
+        '<div class="landing-icon">&#10010;</div><h3>Create Review</h3>' +
+        '<p>Set up a new review package — offices, dates, schedule, and team assignments.</p></a>';
+      html += '<a href="summary.html" class="landing-card">' +
+        '<div class="landing-icon">&#128202;</div><h3>Summary</h3>' +
+        '<p>View completed reviews and drill down into observation data.</p></a>';
+      html += '</div>';
+    } else if (user.role !== 'readonly') {
+      html += '<h3 style="margin:1.5rem 0 0.5rem;">Quick Actions</h3>';
+      html += '<div class="landing-grid">';
+      html += '<a href="setup.html" class="landing-card landing-card-primary">' +
+        '<div class="landing-icon">&#128221;</div><h3>Start Review Day</h3>' +
+        '<p>Begin a new observation day for an assigned review.</p></a>';
+      html += '<a href="summary.html" class="landing-card">' +
+        '<div class="landing-icon">&#128202;</div><h3>View Summary</h3>' +
+        '<p>Review saved observations and summary reports.</p></a>';
+      if (user.role === 'admin') {
+        html += '<a href="admin.html" class="landing-card">' +
+          '<div class="landing-icon">&#9881;</div><h3>Admin Panel</h3>' +
+          '<p>Manage users, reviews, and assignments.</p></a>';
+      }
+      html += '</div>';
+    } else {
+      html += '<div class="landing-grid" style="margin-top:1rem;">';
+      html += '<a href="summary.html" class="landing-card landing-card-primary">' +
+        '<div class="landing-icon">&#128202;</div><h3>View Summary</h3>' +
+        '<p>Review saved observations for your assigned offices.</p></a>';
+      html += '</div>';
+    }
+
+    // ---- My Assigned Reviews ----
+    // Sort by start date descending (latest first)
+    myReviews.sort(function(a, b) {
+      if (b.startDate > a.startDate) return 1;
+      if (b.startDate < a.startDate) return -1;
+      return 0;
+    });
+
+    // Categorize into Current / Future / Past based on review window (±1 week)
+    var currentRevs = [], futureRevs = [], pastRevs = [];
+    var nowMs = new Date().getTime();
+    var ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+    // Admins and team leads bypass lock globally
+    var isAdmin = (user.role === 'admin');
+    var isTeamLead = (user.role === 'teamlead');
+    myReviews.forEach(function(rev) {
+      var revStart = new Date(rev.startDate + 'T00:00:00');
+      var revEnd = new Date(rev.endDate + 'T23:59:59');
+      // Admins/teamleads get a wider window (no lock)
+      var windowStart = (isAdmin || isTeamLead) ? new Date(revStart.getTime() - 30 * 24 * 60 * 60 * 1000) : new Date(revStart.getTime() - ONE_WEEK);
+      var windowEnd = (isAdmin || isTeamLead) ? new Date(revEnd.getTime() + 30 * 24 * 60 * 60 * 1000) : new Date(revEnd.getTime() + ONE_WEEK);
+      if (nowMs > windowEnd.getTime()) {
+        pastRevs.push(rev);
+      } else if (nowMs < windowStart.getTime()) {
+        futureRevs.push(rev);
+      } else {
+        currentRevs.push(rev);
+      }
+    });
+
+    function buildRevCard(rev) {
+      // Determine user's review role (teamlead trumps lead)
+      var myRole = '';
+      for (var i = 0; i < rev.assignments.length; i++) {
+        if (rev.assignments[i].userId === user.id) {
+          var r = rev.assignments[i].reviewRole;
+          if (r === 'teamlead') { myRole = r; break; }
+          if (!myRole) myRole = r;
+        }
+      }
+      // System-level teamlead/admin upgrades review role display
+      if ((myRole === 'lead' || myRole === '') && (user.role === 'teamlead')) myRole = 'teamlead';
+      var isLead = (myRole === 'lead' || myRole === 'teamlead' || user.role === 'teamlead' || user.role === 'admin');
+
+      // Offices as compact list
+      var offices = rev.offices || [];
+      if (offices.length === 0 && rev.financeNum) offices = [{ financeNum: rev.financeNum, officeName: rev.officeName }];
+      var officeStr = offices.map(function(o) { return esc(o.officeName); }).join(', ');
+
+      // Role label
+      var roleLabel = { clerk: 'Clerk', mailhandler: 'Mail Handler', lead: 'Workbook Lead', teamlead: 'Review Lead' };
+      var roleTag = myRole ? '<span class="rc-role rc-role--' + myRole + '">' + (roleLabel[myRole] || myRole) + '</span>' : '';
+
+      // Date window check
+      var revStart = new Date(rev.startDate + 'T00:00:00');
+      var revEnd = new Date(rev.endDate + 'T23:59:59');
+      var ONE_DAY = 24 * 60 * 60 * 1000;
+      var podWindowStart = new Date(revStart.getTime() - ONE_DAY);
+      var podWindowEnd = new Date(revEnd.getTime() + ONE_WEEK);
+      var isPod = !isAdmin && !isLead;
+      var isLocked = isPod && (nowMs > podWindowEnd.getTime() || nowMs < podWindowStart.getTime());
+      var isPreReview = isPod && nowMs < podWindowStart.getTime();
+
+      // Day status
+      var reviewObs = myObs.filter(function(o) { return o.reviewId === rev.id; });
+      if (reviewObs.length === 0) {
+        reviewObs = myObs.filter(function(o) {
+          return Reviews.hasOffice(rev, o.financeNum) && o.date >= rev.startDate && o.date <= rev.endDate;
+        });
+      }
+      var day1 = reviewObs.filter(function(o) { return o.dayNumber === '1'; });
+      var day2 = reviewObs.filter(function(o) { return o.dayNumber === '2'; });
+      var d1Status = day1.length > 0 ? (day1[0].status === 'submitted' ? 'done' : 'wip') : 'none';
+      var d2Status = day2.length > 0 ? (day2[0].status === 'submitted' ? 'done' : 'wip') : 'none';
+
+      // Travel survey check
+      var travelHtml = '';
+      (function() {
+        var tKey = 'clerk_obs_travel_survey_' + rev.id;
+        try {
+          var tData = JSON.parse(localStorage.getItem(tKey));
+          if (!tData || !tData.assignments) return;
+          var isAssigned = tData.assignments.some(function(a) { return a.userId === user.id; });
+          if (!isAssigned && !isLead && !isAdmin) return;
+
+          if (isAssigned) {
+            var hasResponded = tData.responses && tData.responses[user.id];
+            travelHtml = '<a href="review.html?mode=travel&travelReview=' + rev.id + '" class="rc-travel-link' + (hasResponded ? ' rc-travel--done' : '') + '" title="Travel Survey">' +
+              '\u2708\ufe0f ' + (hasResponded ? 'Travel \u2713' : 'Travel Survey') + '</a>';
+          }
+
+          var isReviewTeamLead = (myRole === 'teamlead' || myRole === 'lead') || (user.role === 'teamlead' && rev.createdBy === user.id);
+          if (isReviewTeamLead) {
+            var pending = tData.assignments.filter(function(a) { return !tData.responses || !tData.responses[a.userId]; }).length;
+            var done = tData.assignments.length - pending;
+            travelHtml += '<span class="rc-travel-stat">\u2708\ufe0f ' + done + '/' + tData.assignments.length + (pending > 0 ? ' <span style="color:var(--warning);">(' + pending + ' pending)</span>' : ' \u2713') + '</span>';
+          }
+        } catch(e) {}
+      })();
+
+      // --- Build compact card ---
+      var c = '<div class="rc-card" data-review-id="' + rev.id + '">';
+
+      // Top row: name + role
+      c += '<div class="rc-header">';
+      c += '<h3 class="rc-title">' + esc(rev.name || rev.officeName || 'Review') + '</h3>';
+      c += roleTag;
+      c += '</div>';
+
+      // Info row: dates + offices
+      c += '<div class="rc-info">';
+      c += '<span class="rc-dates">' + esc(rev.startDate) + ' \u2013 ' + esc(rev.endDate) + '</span>';
+      if (officeStr) c += '<span class="rc-offices">' + officeStr + '</span>';
+      c += '</div>';
+
+      // Day progress dots + travel
+      if (!isPreReview && !isLocked) {
+        c += '<div class="rc-progress">';
+        function dotClass(s) { return s === 'done' ? 'rc-dot--done' : s === 'wip' ? 'rc-dot--wip' : 'rc-dot--none'; }
+        c += '<div class="rc-days">';
+        c += '<span class="rc-dot ' + dotClass(d1Status) + '" title="Day 1: ' + d1Status + '">1</span>';
+        c += '<span class="rc-dot ' + dotClass(d2Status) + '" title="Day 2: ' + d2Status + '">2</span>';
+        var statusText = (d1Status === 'done' && d2Status === 'done') ? 'Complete' :
+          (d1Status === 'done' || d2Status === 'done') ? 'Partially done' :
+          (d1Status === 'wip' || d2Status === 'wip') ? 'In progress' : 'Not started';
+        c += '<span class="rc-day-label">' + statusText + '</span>';
+        c += '</div>';
+        if (travelHtml) c += '<div class="rc-travel">' + travelHtml + '</div>';
+        c += '</div>';
+      } else if (travelHtml) {
+        c += '<div class="rc-progress"><div class="rc-travel">' + travelHtml + '</div></div>';
+      }
+
+      // Action row
+      c += '<div class="rc-actions">';
+      if (isPreReview) {
+        var daysUntil = Math.ceil((podWindowStart.getTime() - nowMs) / ONE_DAY);
+        c += '<span class="rc-countdown">Opens in ' + daysUntil + ' day' + (daysUntil !== 1 ? 's' : '') + '</span>';
+      } else if (isLocked) {
+        c += '<a class="btn btn-sm btn-outline dash-action-btn" data-review-id="' + rev.id + '" data-goto="summary">View Summary</a>';
+      } else if (isLead) {
+        c += '<a class="btn btn-sm btn-primary dash-action-btn" data-review-id="' + rev.id + '" data-goto="workbook">Manage Review</a>';
+      } else {
+        // POD actions — smart single button
+        if (day1.length === 0) {
+          c += '<a class="btn btn-sm btn-primary dash-action-btn" data-review-id="' + rev.id + '" data-goto="setup" data-day="1">Start Day 1</a>';
+        } else if (day2.length === 0) {
+          c += '<a class="btn btn-sm btn-primary dash-action-btn" data-review-id="' + rev.id + '" data-goto="setup" data-day="2">Start Day 2</a>';
+          c += '<a class="btn btn-sm btn-outline dash-action-btn" data-review-id="' + rev.id + '" data-goto="setup" data-day="1">Edit Day 1</a>';
+        } else {
+          c += '<a class="btn btn-sm btn-outline dash-action-btn" data-review-id="' + rev.id + '" data-goto="setup" data-day="1">Day 1</a>';
+          c += '<a class="btn btn-sm btn-outline dash-action-btn" data-review-id="' + rev.id + '" data-goto="setup" data-day="2">Day 2</a>';
+          c += '<a class="btn btn-sm btn-primary dash-action-btn" data-review-id="' + rev.id + '" data-goto="summary">Summary</a>';
+        }
+      }
+      c += '</div>';
+
+      c += '</div>';
+      return c;
+    }
+
+    // Render grouped review card sections
+    if (currentRevs.length > 0) {
+      html += '<h3 style="margin:2rem 0 0.5rem;">&#9200; Current Reviews</h3>';
+      html += '<div class="dash-grid">';
+      currentRevs.forEach(function(rev) { html += buildRevCard(rev); });
+      html += '</div>';
+    }
+    if (futureRevs.length > 0) {
+      html += '<h3 style="margin:2rem 0 0.5rem;">&#128197; Upcoming Reviews</h3>';
+      html += '<div class="dash-grid">';
+      futureRevs.forEach(function(rev) { html += buildRevCard(rev); });
+      html += '</div>';
+    }
+    if (pastRevs.length > 0) {
+      html += '<h3 style="margin:2rem 0 0.5rem;">&#128451; Past Reviews</h3>';
+      html += '<div class="dash-grid">';
+      pastRevs.forEach(function(rev) { html += buildRevCard(rev); });
+      html += '</div>';
+    }
+    if (myReviews.length === 0 && user.role === 'reviewer') {
+      html += '<div class="card" style="margin-top:1.5rem;text-align:center;padding:2rem;">' +
+        '<p style="color:var(--text-light);">No reviews assigned to you yet. You can request access below.</p></div>';
+    }
+
+    // Admin: show all other reviews they're not assigned to
+    if (user.role === 'admin') {
+      var myAssignedIds = {};
+      myReviews.forEach(function(r) { myAssignedIds[r.id] = true; });
+      var otherRevs = allReviewsList.filter(function(r) { return !myAssignedIds[r.id]; });
+      if (otherRevs.length > 0) {
+        otherRevs.sort(function(a, b) { return b.startDate > a.startDate ? 1 : b.startDate < a.startDate ? -1 : 0; });
+        html += '<h3 style="margin:2rem 0 0.5rem;">&#128203; All Reviews</h3>';
+        html += '<div class="dash-grid">';
+        otherRevs.forEach(function(rev) { html += buildRevCard(rev); });
+        html += '</div>';
+      }
+    }
+
+    // ---- Request Access ----
+    if (user.role === 'reviewer' || user.role === 'readonly') {
+      // Build ALL review options (for requesting access)
+      var allRevs = Reviews.getAll();
+      allRevs.sort(function(a, b) { return b.startDate > a.startDate ? 1 : b.startDate < a.startDate ? -1 : 0; });
+      var allRevOptions = '';
+      allRevs.forEach(function(r) {
+        allRevOptions += '<option value="' + esc(r.id) + '">' + esc(r.name || r.officeName || 'Review') + ' (' + esc(r.startDate) + ')</option>';
+      });
+      if (!allRevOptions) allRevOptions = '<option value="">No reviews available</option>';
+
+      // Build user's assigned review options (for role change)
+      var userRevs = Reviews.getForUser(user.id);
+      var myRevOptions = '';
+      userRevs.forEach(function(r) {
+        myRevOptions += '<option value="' + esc(r.id) + '">' + esc(r.name || r.officeName || 'Review') + ' (' + esc(r.startDate) + ')</option>';
+      });
+      if (!myRevOptions) myRevOptions = '<option value="">No reviews assigned</option>';
+
+      // Build review role options
+      var roleOptions = '';
+      ['clerk', 'mailhandler', 'lead', 'teamlead'].forEach(function(r) {
+        roleOptions += '<option value="' + r + '">' + esc(Auth.REVIEW_ROLE_LABELS[r] || r) + '</option>';
+      });
+
+      html += '<div class="card" style="margin-top:1.5rem;">' +
+        '<h3>Request Access</h3>' +
+        '<p class="setup-subtitle">Submit a request to change your review access or role.</p>' +
+        '<div class="form-row">' +
+          '<div class="form-group">' +
+            '<label for="req-type">Request Type</label>' +
+            '<select id="req-type">' +
+              '<option value="review_access">Request Access to a Review</option>' +
+              '<option value="review_role">Review Role Change</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+        '<!-- Dynamic fields -->' +
+        '<div id="req-review-access-wrap">' +
+          '<div class="form-row"><div class="form-group">' +
+            '<label for="req-review-pick">Select Review</label>' +
+            '<select id="req-review-pick">' + allRevOptions + '</select>' +
+          '</div></div>' +
+        '</div>' +
+        '<div id="req-role-wrap" hidden>' +
+          '<div class="form-row">' +
+            '<div class="form-group">' +
+              '<label for="req-role-review">Review</label>' +
+              '<select id="req-role-review">' + myRevOptions + '</select>' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label for="req-role-desired">Desired Role</label>' +
+              '<select id="req-role-desired">' + roleOptions + '</select>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="setup-actions">' +
+          '<button id="req-submit-btn" class="btn btn-primary">Submit Request</button>' +
+        '</div>' +
+        '<p id="req-status" class="status-msg" hidden></p>' +
+      '</div>';
+    }
+
+    // ---- Help / Support ----
+    html += '<div class="card" style="margin-top:1.5rem;">' +
+      '<h3>Help &amp; Support</h3>' +
+      '<p style="font-size:0.85rem;">Need help? Contact support at ' +
+      '<a href="mailto:preston.k.carney@usps.gov">preston.k.carney@usps.gov</a></p>' +
+    '</div>';
+
+    main.innerHTML = html;
+
+    // Helper: compute observation date from review start + day offset
+    function computeObsDate(rev, officeObj, dayNum) {
+      var base = (officeObj && officeObj.startDate) ? officeObj.startDate : (rev ? rev.startDate : '');
+      if (!base) return '';
+      var d = new Date(base + 'T00:00:00');
+      var offset = (parseInt(dayNum, 10) || 1) - 1;
+      if (offset > 0) d.setDate(d.getDate() + offset);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    // ---- Action button click handlers ----
+    document.querySelectorAll('.dash-action-btn').forEach(function(btn) {
+      btn.style.cursor = 'pointer';
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var revId = btn.dataset.reviewId;
+        var goto = btn.dataset.goto;
+        if (goto === 'summary') {
+          window.location.href = 'summary.html';
+        } else if (goto === 'workbook') {
+          var rev = null;
+          for (var ri = 0; ri < myReviews.length; ri++) {
+            if (myReviews[ri].id === revId) { rev = myReviews[ri]; break; }
+          }
+          // Determine this user's review role from assignment
+          var wbRole = 'lead';
+          if (rev) {
+            for (var ai = 0; ai < rev.assignments.length; ai++) {
+              if (rev.assignments[ai].userId === user.id) {
+                var r = rev.assignments[ai].reviewRole;
+                if (r === 'teamlead') { wbRole = r; break; }
+                if (wbRole === 'lead') wbRole = r;
+              }
+            }
+          }
+          var firstOffice = rev && rev.offices && rev.offices.length > 0 ? rev.offices[0] : null;
+          var setupObj = {
+            reviewId: revId,
+            office: firstOffice ? firstOffice.officeName : (rev ? rev.officeName : ''),
+            financeNum: firstOffice ? firstOffice.financeNum : (rev ? rev.financeNum : ''),
+            date: computeObsDate(rev, firstOffice, '1'),
+            dayNumber: '1',
+            observerName: user.displayName || user.username,
+            reviewRole: wbRole
+          };
+          localStorage.setItem('reviewDaySetup', JSON.stringify(setupObj));
+          window.location.href = 'review.html?rid=' + encodeURIComponent(revId) + '&day=1&mode=workbook';
+        } else {
+          var rev = null;
+          for (var ri = 0; ri < myReviews.length; ri++) {
+            if (myReviews[ri].id === revId) { rev = myReviews[ri]; break; }
+          }
+          var myRoleKey = '';
+          if (rev) {
+            for (var ai = 0; ai < rev.assignments.length; ai++) {
+              if (rev.assignments[ai].userId === user.id) {
+                var r = rev.assignments[ai].reviewRole;
+                if (r === 'teamlead') { myRoleKey = r; break; }
+                if (!myRoleKey) myRoleKey = r;
+              }
+            }
+          }
+          var dayAttr = btn.dataset.day;
+          var forceRole = btn.dataset.forceRole || '';
+          var firstOff = rev && rev.offices && rev.offices.length > 0 ? rev.offices[0] : null;
+          var setupObj = {
+            reviewId: revId,
+            office: firstOff ? firstOff.officeName : (rev ? rev.officeName : ''),
+            financeNum: firstOff ? firstOff.financeNum : (rev ? rev.financeNum : ''),
+            date: computeObsDate(rev, firstOff, dayAttr || '1'),
+            dayNumber: dayAttr || '',
+            observerName: user.displayName || user.username,
+            reviewRole: forceRole || myRoleKey || (user.role === 'admin' || user.role === 'teamlead' ? 'clerk' : '')
+          };
+          localStorage.setItem('reviewDaySetup', JSON.stringify(setupObj));
+          // Go directly to review if we have enough info, otherwise go to setup
+          if (setupObj.dayNumber && setupObj.office) {
+            window.location.href = 'review.html?rid=' + encodeURIComponent(revId) + '&day=' + encodeURIComponent(setupObj.dayNumber);
+          } else {
+            window.location.href = 'setup.html';
+          }
+        }
+      });
+    });
+
+    // ---- Request type toggle & submit handler ----
+    var reqTypeEl = document.getElementById('req-type');
+    var reqBtn = document.getElementById('req-submit-btn');
+    if (reqTypeEl) {
+      var revAccessWrap = document.getElementById('req-review-access-wrap');
+      var roleWrap      = document.getElementById('req-role-wrap');
+      reqTypeEl.addEventListener('change', function() {
+        var t = reqTypeEl.value;
+        revAccessWrap.hidden = t !== 'review_access';
+        roleWrap.hidden      = t !== 'review_role';
+      });
+    }
+    if (reqBtn) {
+      reqBtn.addEventListener('click', function() {
+        var type = document.getElementById('req-type').value;
+        var statusEl = document.getElementById('req-status');
+        var detail = '';
+        if (type === 'review_access') {
+          var sel = document.getElementById('req-review-pick');
+          detail = sel.value ? sel.options[sel.selectedIndex].text : '';
+        } else if (type === 'review_role') {
+          var revSel = document.getElementById('req-role-review');
+          var roleSel = document.getElementById('req-role-desired');
+          var revText = revSel.value ? revSel.options[revSel.selectedIndex].text : '';
+          var roleText = roleSel.options[roleSel.selectedIndex].text;
+          detail = roleText + ' on ' + revText;
+        }
+        if (!detail) {
+          statusEl.textContent = 'Please fill in the required field.';
+          statusEl.className = 'status-msg error'; statusEl.hidden = false; return;
+        }
+        Auth.submitRequest({ userId: user.id, userName: user.displayName, type: type, detail: detail });
+        statusEl.textContent = 'Request submitted! An admin will review it.';
+        statusEl.className = 'status-msg success'; statusEl.hidden = false;
+      });
+    }
+
+    // ---- Role Switcher (admin only debug tool) ----
+    if (Auth.getRealRole() === 'admin') {
+      var switcher = document.createElement('div');
+      switcher.className = 'role-switcher';
+      switcher.innerHTML = '<label>&#128736; Debug — Switch Access Level:</label>';
+      ['admin', 'teamlead', 'reviewer', 'readonly'].forEach(function(r) {
+        var btn = document.createElement('button');
+        btn.textContent = Auth.ROLE_LABELS[r] || r;
+        if (r === user.role) btn.className = 'active';
+        btn.addEventListener('click', function() { Auth.switchRole(r); });
+        switcher.appendChild(btn);
+      });
+      document.body.appendChild(switcher);
+    }
+
+    function daysSince(dateStr) {
+      var d = new Date(dateStr + 'T00:00:00');
+      var now = new Date();
+      return Math.floor((now - d) / (1000 * 60 * 60 * 24));
+    }
+    function esc(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  })();
+  </script>
+</body>
+</html>

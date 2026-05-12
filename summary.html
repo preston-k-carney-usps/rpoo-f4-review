@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program — Review Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="summary.html" class="active">Review Dashboard</a>
+      <a href="help.html">Help</a>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- ====== DASHBOARD VIEW ====== -->
+    <div id="dash-view">
+      <!-- Header row: title + filter -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+        <h2 style="margin:0;font-size:1.2rem;">Review Dashboard</h2>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <label for="filter-status" style="font-size:0.8rem;font-weight:600;">Status</label>
+          <select id="filter-status" style="min-width:120px;">
+            <option value="all">All</option>
+            <option value="not-started">Not Started</option>
+            <option value="in-progress">In Progress</option>
+            <option value="complete">Complete</option>
+          </select>
+          <label for="filter-year" style="font-size:0.8rem;font-weight:600;">Year</label>
+          <select id="filter-year" style="min-width:80px;"></select>
+        </div>
+      </div>
+
+      <!-- Aggregate stats -->
+      <section class="card stats-grid" id="agg-stats" hidden></section>
+
+      <!-- Empty state -->
+      <div id="dash-empty" class="card" hidden>
+        <p class="empty-state">No reviews found.</p>
+      </div>
+
+      <!-- Review cards grid -->
+      <div id="dash-grid" class="dash-review-grid"></div>
+    </div>
+
+    <!-- Review Detail -->
+    <div id="review-view" hidden>
+      <!-- Header -->
+      <section class="card">
+        <div class="section-header">
+          <div>
+            <h2 id="review-title"></h2>
+            <span id="review-subtitle" class="obs-date"></span>
+          </div>
+          <button id="back-btn" class="btn btn-secondary btn-sm">&larr; Back</button>
+        </div>
+      </section>
+
+      <!-- Clerk Stats -->
+      <section class="card stats-grid" id="clerk-stats-section">
+        <div class="stat-box">
+          <span class="stat-value" id="total-time-observed">0</span>
+          <span class="stat-label">Time Observed</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="total-entries">0</span>
+          <span class="stat-label">Total Entries</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="total-np-time">0</span>
+          <span class="stat-label">NP Time</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="total-np-instances">0</span>
+          <span class="stat-label">NP Instances</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="total-time-lost">0</span>
+          <span class="stat-label">Time Lost (min)</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="total-words">0</span>
+          <span class="stat-label">Notes Words</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="top-ldc">&mdash;</span>
+          <span class="stat-label">Top LDC</span>
+        </div>
+      </section>
+
+      <!-- Mail Handler Stats (hidden by default) -->
+      <section class="card stats-grid" id="mh-stats-section" hidden>
+        <div class="stat-box">
+          <span class="stat-value" id="mh-total-observed">0</span>
+          <span class="stat-label">Time Observed</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="mh-total-entries">0</span>
+          <span class="stat-label">Total Entries</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="mh-workload">0</span>
+          <span class="stat-label">Workload</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="mh-np-time">0</span>
+          <span class="stat-label">Non-productive</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="mh-break-time">0</span>
+          <span class="stat-label">Break Time</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="mh-cc-time">0</span>
+          <span class="stat-label">Cross Craft</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="mh-time-lost">0</span>
+          <span class="stat-label">Time Lost (min)</span>
+        </div>
+        <div class="stat-box stat-box-highlight">
+          <span class="stat-value" id="mh-continuous">0</span>
+          <span class="stat-label">Longest Continuous Work</span>
+        </div>
+      </section>
+
+      <!-- Day Timeline -->
+      <section class="card" id="timeline-section">
+        <h2>Observation Timeline</h2>
+        <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.75rem;" id="timeline-desc">Each block represents an observation entry, colored by LDC. Width = duration.</p>
+        <div id="timeline-day1" class="timeline-section" hidden>
+          <h3 style="font-size:0.85rem;margin-bottom:0.4rem;">Day 1</h3>
+          <div class="mh-cw-label" id="cw-label-1" hidden>Continuous Work</div>
+          <div class="timeline-track" id="cw-track-1" hidden></div>
+          <div class="timeline-track" id="timeline-track-1"></div>
+          <div class="mh-day-breakdown" id="mh-day-stats-1" hidden></div>
+        </div>
+        <div id="timeline-day2" class="timeline-section" hidden>
+          <h3 style="font-size:0.85rem;margin-bottom:0.4rem;margin-top:0.75rem;">Day 2</h3>
+          <div class="mh-cw-label" id="cw-label-2" hidden>Continuous Work</div>
+          <div class="timeline-track" id="cw-track-2" hidden></div>
+          <div class="timeline-track" id="timeline-track-2"></div>
+          <div class="mh-day-breakdown" id="mh-day-stats-2" hidden></div>
+        </div>
+        <div id="timeline-legend" class="timeline-legend"></div>
+      </section>
+
+      <!-- Day 1 -->
+      <section class="card" id="day1-section" hidden>
+        <div class="section-header">
+          <h2 id="day1-title">Day 1</h2>
+          <button class="btn btn-danger btn-sm day-delete-btn" data-day="1">Delete Day</button>
+        </div>
+        <div id="day1-content"></div>
+      </section>
+
+      <!-- Day 2 -->
+      <section class="card" id="day2-section" hidden>
+        <div class="section-header">
+          <h2 id="day2-title">Day 2</h2>
+          <button class="btn btn-danger btn-sm day-delete-btn" data-day="2">Delete Day</button>
+        </div>
+        <div id="day2-content"></div>
+      </section>
+
+      <!-- Hours by LDC -->
+      <section class="card">
+        <h2>Hours by LDC</h2>
+        <div id="ldc-bars" class="bar-chart"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/sync.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/offices.js"></script>
+  <script src="js/reviews.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/summary.js"></script>
+</body>
+</html>

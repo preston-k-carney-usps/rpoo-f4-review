@@ -1,0 +1,364 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program — Setup</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="summary.html">Review Dashboard</a>
+      <a href="help.html">Help</a>
+    </div>
+  </nav>
+
+  <main class="container setup-container">
+    <!-- Admin / Review Lead view -->
+    <section class="card setup-card" id="admin-setup">
+      <h2>Start Review Day</h2>
+      <p class="setup-subtitle">Select an assigned review, choose the day number, then begin logging.</p>
+
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="review-select">Your Assigned Reviews</label>
+          <select id="review-select">
+            <option value="">-- Select a review --</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="day-number">Day #</label>
+          <select id="day-number">
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <input type="text" id="review-role-display" readonly style="background:#f1f5f9;cursor:default;">
+        </div>
+      </div>
+
+      <div class="setup-actions">
+        <button id="start-btn" class="btn btn-primary btn-lg">Begin Logging &rarr;</button>
+      </div>
+      <div id="setup-status" class="status-msg" hidden></div>
+    </section>
+
+    <!-- POD view: auto-detected active review -->
+    <section class="card setup-card" id="pod-setup" hidden>
+      <h2>Start Review Day</h2>
+      <p class="setup-subtitle">Confirm your review details and select the day number to begin.</p>
+
+      <div id="pod-review-info" class="pod-review-info">
+        <div class="pod-info-row">
+          <span class="pod-info-label">Office</span>
+          <span class="pod-info-value" id="pod-office"></span>
+        </div>
+        <div class="pod-info-row">
+          <span class="pod-info-label">Area / District</span>
+          <span class="pod-info-value" id="pod-area-dist"></span>
+        </div>
+        <div class="pod-info-row">
+          <span class="pod-info-label">Finance #</span>
+          <span class="pod-info-value" id="pod-finance"></span>
+        </div>
+        <div class="pod-info-row">
+          <span class="pod-info-label">Review Dates</span>
+          <span class="pod-info-value" id="pod-dates"></span>
+        </div>
+        <div class="pod-info-row">
+          <span class="pod-info-label">Your Role</span>
+          <span class="pod-info-value" id="pod-role"></span>
+        </div>
+        <div class="pod-info-row" id="pod-role-change-row" hidden>
+          <span class="pod-info-label">Change To</span>
+          <span class="pod-info-value">
+            <select id="pod-role-select" style="display:inline-block;width:auto;padding:0.2rem 0.4rem;font-size:0.85rem;"></select>
+            <button id="pod-role-btn" class="btn btn-outline btn-sm" style="margin-left:0.5rem;font-size:0.75rem;padding:0.2rem 0.6rem;">Request</button>
+            <span id="pod-role-status" class="status-msg" style="display:inline;margin-left:0.5rem;font-size:0.78rem;" hidden></span>
+          </span>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:1rem;">
+        <div class="form-group">
+          <label for="pod-day-number">Day #</label>
+          <select id="pod-day-number">
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="setup-actions">
+        <button id="pod-start-btn" class="btn btn-primary btn-lg">Begin Logging &rarr;</button>
+      </div>
+      <div id="pod-status" class="status-msg" hidden></div>
+    </section>
+
+    <!-- POD: no active review -->
+    <section class="card setup-card" id="pod-no-review" hidden>
+      <h2>No Active Review</h2>
+      <p class="setup-subtitle">You don't have an active review right now. You can request access from the <a href="index.html">home page</a>.</p>
+    </section>
+
+
+  </main>
+
+  <script src="js/sync.js"></script>
+  <script src="js/offices.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/reviews.js"></script>
+  <script src="js/storage.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var user = Auth.requireAuth(['admin', 'teamlead', 'reviewer']);
+      if (!user) return;
+      Auth.renderNavbar();
+
+      var roleBadge = { clerk: 'Clerk Reviewer', lead: 'Workbook Lead', mailhandler: 'Mail Handler Reviewer', teamlead: 'Review Lead' };
+
+      // Load reviews
+      var myReviews;
+      if (user.role === 'admin') {
+        myReviews = Reviews.getAll();
+      } else {
+        myReviews = Reviews.getForUser(user.id);
+        if (user._realId && myReviews.length === 0) {
+          myReviews = Reviews.getForUser(user._realId);
+        }
+        if (user._realRole === 'admin' && myReviews.length === 0) {
+          myReviews = Reviews.getAll();
+        }
+      }
+
+      myReviews.sort(function(a, b) {
+        if (b.startDate > a.startDate) return 1;
+        if (b.startDate < a.startDate) return -1;
+        return 0;
+      });
+
+      var nowMs = new Date().getTime();
+
+      function esc(str) {
+        if (!str) return '';
+        var d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+      }
+
+      // ========== POD / Reviewer View ==========
+      if (user.role === 'reviewer') {
+        document.getElementById('admin-setup').hidden = true;
+
+        // Find the most recent assigned review
+        var activeRev = myReviews.length > 0 ? myReviews[0] : null;
+
+        // If coming from dashboard with a specific reviewId, use that
+        var savedSetup = localStorage.getItem('reviewDaySetup');
+        if (savedSetup) {
+          try {
+            var sd = JSON.parse(savedSetup);
+            if (sd.reviewId) {
+              for (var si = 0; si < myReviews.length; si++) {
+                if (myReviews[si].id === sd.reviewId) { activeRev = myReviews[si]; break; }
+              }
+            }
+          } catch(e) {}
+        }
+
+        if (activeRev) {
+          document.getElementById('pod-setup').hidden = false;
+
+          // Fill in review info
+          var offices = activeRev.offices || [];
+          if (offices.length === 0 && activeRev.financeNum) {
+            offices = [{ financeNum: activeRev.financeNum, officeName: activeRev.officeName }];
+          }
+          document.getElementById('pod-office').textContent = offices.map(function(o) { return o.officeName; }).join(', ');
+          document.getElementById('pod-dates').textContent = activeRev.startDate + ' to ' + activeRev.endDate;
+          document.getElementById('pod-finance').textContent = offices.map(function(o) { return o.financeNum; }).join(', ');
+
+          // Area / District lookup (first office)
+          var firstFin = offices.length > 0 ? offices[0].financeNum : '';
+          for (var j = 0; j < OFFICE_LIST.length; j++) {
+            if (OFFICE_LIST[j][0] === firstFin) {
+              document.getElementById('pod-area-dist').textContent = OFFICE_LIST[j][3] + ' — ' + OFFICE_LIST[j][4];
+              break;
+            }
+          }
+
+          // Role
+          var myRole = '';
+          var myRoleKey = '';
+          for (var k = 0; k < activeRev.assignments.length; k++) {
+            if (activeRev.assignments[k].userId === user.id) {
+              myRoleKey = activeRev.assignments[k].reviewRole;
+              myRole = roleBadge[myRoleKey] || myRoleKey;
+              break;
+            }
+          }
+          document.getElementById('pod-role').textContent = myRole || 'POD';
+
+          // Check existing submissions to auto-set day number
+          var allObs = Auth.filterVisible(Storage.hydrate(Storage.getAll()));
+          var revObs = allObs.filter(function(o) { return o.reviewId === activeRev.id; });
+          var hasDay1 = revObs.some(function(o) { return o.dayNumber === '1'; });
+          var hasDay2 = revObs.some(function(o) { return o.dayNumber === '2'; });
+          var podDaySelect = document.getElementById('pod-day-number');
+          if (hasDay1 && !hasDay2) {
+            podDaySelect.value = '2';
+          } else if (!hasDay1) {
+            podDaySelect.value = '1';
+          }
+
+          // Pre-select from session if available
+          var saved = localStorage.getItem('reviewDaySetup');
+          if (saved) {
+            try {
+              var data = JSON.parse(saved);
+              if (data.dayNumber) podDaySelect.value = data.dayNumber;
+            } catch(e) {}
+          }
+
+          // Start button
+          document.getElementById('pod-start-btn').addEventListener('click', function() {
+            var podStatus = document.getElementById('pod-status');
+            var firstOff = (activeRev.offices && activeRev.offices.length > 0) ? activeRev.offices[0] : null;
+            var setupData = {
+              reviewId: activeRev.id,
+              office: firstOff ? firstOff.officeName : (activeRev.officeName || ''),
+              financeNum: firstOff ? firstOff.financeNum : (activeRev.financeNum || ''),
+              date: (firstOff && firstOff.startDate) ? firstOff.startDate : activeRev.startDate,
+              dayNumber: podDaySelect.value,
+              observerName: user.displayName || user.username,
+              reviewRole: myRoleKey || 'clerk'
+            };
+            localStorage.setItem('reviewDaySetup', JSON.stringify(setupData));
+            window.location.href = 'review.html?rid=' + encodeURIComponent(activeRev.id) + '&day=' + encodeURIComponent(podDaySelect.value);
+          });
+        } else {
+          document.getElementById('pod-no-review').hidden = false;
+        }
+
+        // Inline role change on the role row
+        if (activeRev) {
+          document.getElementById('pod-role-change-row').hidden = false;
+          var allRoles = { clerk: 'Clerk Reviewer', mailhandler: 'Mail Handler Reviewer', lead: 'Workbook Lead', teamlead: 'Review Lead' };
+          var roleSelect = document.getElementById('pod-role-select');
+          Object.keys(allRoles).forEach(function(key) {
+            if (key !== myRoleKey) {
+              var opt = document.createElement('option');
+              opt.value = key;
+              opt.textContent = allRoles[key];
+              roleSelect.appendChild(opt);
+            }
+          });
+          document.getElementById('pod-role-btn').addEventListener('click', function() {
+            var roleStatus = document.getElementById('pod-role-status');
+            var desired = roleSelect.value;
+            if (!desired) return;
+            var desiredLabel = allRoles[desired] || desired;
+            var revLabel = activeRev.name || activeRev.officeName || 'Review';
+            Auth.submitRequest({ userId: user.id, userName: user.displayName, type: 'review_role', detail: desiredLabel + ' on ' + revLabel });
+            roleStatus.textContent = 'Requested!';
+            roleStatus.className = 'status-msg success'; roleStatus.hidden = false;
+          });
+        }
+
+        return; // POD setup done
+      }
+
+      // ========== Admin / Review Lead View ==========
+      var reviewSelect   = document.getElementById('review-select');
+      var reviewRoleDisp = document.getElementById('review-role-display');
+      var statusEl       = document.getElementById('setup-status');
+
+      myReviews.forEach(function(r) {
+        var roleLabel = '';
+        for (var i = 0; i < r.assignments.length; i++) {
+          if (r.assignments[i].userId === user.id) {
+            roleLabel = ' — ' + roleBadge[r.assignments[i].reviewRole];
+            break;
+          }
+        }
+
+        var opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = (r.name || r.officeName || 'Review') + ' — ' + r.startDate + ' to ' + r.endDate + roleLabel;
+        reviewSelect.appendChild(opt);
+      });
+
+      if (myReviews.length === 0) {
+        reviewSelect.innerHTML = '<option value="">No reviews assigned to you</option>';
+      }
+
+      reviewSelect.addEventListener('change', function() {
+        var rid = reviewSelect.value;
+        if (!rid) { reviewRoleDisp.value = ''; return; }
+        var rev = Reviews.getById(rid);
+        if (!rev) return;
+        var myRole = '';
+        for (var i = 0; i < rev.assignments.length; i++) {
+          if (rev.assignments[i].userId === user.id) {
+            myRole = roleBadge[rev.assignments[i].reviewRole] || rev.assignments[i].reviewRole;
+            break;
+          }
+        }
+        reviewRoleDisp.value = myRole || (user.role === 'admin' || user.role === 'teamlead' ? 'Admin' : '');
+      });
+
+      // Pre-select if returning from review page
+      var saved = localStorage.getItem('reviewDaySetup');
+      if (saved) {
+        try {
+          var data = JSON.parse(saved);
+          if (data.reviewId) reviewSelect.value = data.reviewId;
+          if (data.dayNumber) document.getElementById('day-number').value = data.dayNumber;
+          reviewSelect.dispatchEvent(new Event('change'));
+        } catch(e) {}
+      }
+
+      document.getElementById('start-btn').addEventListener('click', function() {
+        statusEl.hidden = true;
+        var rid = reviewSelect.value;
+        if (!rid) {
+          statusEl.textContent = 'Please select a review.';
+          statusEl.className = 'status-msg error';
+          statusEl.hidden = false;
+          return;
+        }
+        var rev = Reviews.getById(rid);
+        if (!rev) return;
+
+        var reviewRole = '';
+        for (var i = 0; i < rev.assignments.length; i++) {
+          if (rev.assignments[i].userId === user.id) {
+            reviewRole = rev.assignments[i].reviewRole;
+            break;
+          }
+        }
+
+        var firstOff = (rev.offices && rev.offices.length > 0) ? rev.offices[0] : null;
+        var setupData = {
+          reviewId: rev.id,
+          office: firstOff ? firstOff.officeName : (rev.officeName || ''),
+          financeNum: firstOff ? firstOff.financeNum : (rev.financeNum || ''),
+          date: (firstOff && firstOff.startDate) ? firstOff.startDate : rev.startDate,
+          dayNumber: document.getElementById('day-number').value,
+          observerName: user.displayName || user.username,
+          reviewRole: reviewRole || (user.role === 'admin' || user.role === 'teamlead' ? 'clerk' : '')
+        };
+
+        localStorage.setItem('reviewDaySetup', JSON.stringify(setupData));
+        window.location.href = 'review.html?rid=' + encodeURIComponent(rev.id) + '&day=' + encodeURIComponent(setupData.dayNumber);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1135 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program &mdash; Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="summary.html">Review Dashboard</a>
+      <a href="help.html">Help</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Admin Tab Bar -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="reviews-tab">Manage My Reviews</button>
+      <button class="admin-tab" data-tab="users-tab">Manage Users</button>
+      <button class="admin-tab" data-tab="requests-tab">Manage Requests</button>
+      <button class="admin-tab" data-tab="system-tab">System</button>
+    </div>
+
+    <!-- ====== USERS TAB ====== -->
+    <div id="users-tab" class="admin-tab-panel">
+
+    <!-- Bulk Create Users -->
+    <section class="card">
+      <h2>Add Users</h2>
+      <p class="setup-subtitle">Paste a list of names (one per line). Each name becomes the username. Default password is the name in <strong>lowercase with no spaces</strong> (e.g. "John Smith" &rarr; "johnsmith"). All new users must change their password on first login.</p>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="bulk-names">Names (one per line)</label>
+          <textarea id="bulk-names" rows="6" placeholder="John Smith&#10;Jane Doe&#10;Bob Johnson"></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="bulk-role">Role for all</label>
+          <select id="bulk-role">
+            <option value="reviewer">POD</option>
+            <option value="teamlead">Review Lead</option>
+            <option value="readonly">Read Only</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="setup-actions">
+        <button id="bulk-create-btn" class="btn btn-primary">Add Users</button>
+      </div>
+      <p id="bulk-status" class="status-msg" hidden></p>
+    </section>
+
+    <!-- Edit Single User (hidden until edit clicked) -->
+    <section class="card" id="edit-section" hidden>
+      <h2 id="edit-title">Edit User</h2>
+      <input type="hidden" id="edit-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-name">Name</label>
+          <input type="text" id="edit-name">
+        </div>
+        <div class="form-group">
+          <label for="edit-email">Email</label>
+          <input type="email" id="edit-email" placeholder="user@usps.gov">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-pass">New Password</label>
+          <input type="text" id="edit-pass" placeholder="Leave blank to keep current">
+        </div>
+        <div class="form-group">
+          <label for="edit-role">Role</label>
+          <select id="edit-role">
+            <option value="reviewer">POD</option>
+            <option value="teamlead">Review Lead</option>
+            <option value="readonly">Read Only</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group" style="align-self:flex-end;">
+          <button type="button" id="edit-reset-pw-btn" class="btn btn-outline btn-sm">Reset to Default Password</button>
+          <p id="edit-pw-status" style="font-size:0.8rem;margin-top:0.3rem;"></p>
+        </div>
+      </div>
+      <div id="edit-assign-section">
+        <label class="admin-label">Assigned Offices (Finance #s)</label>
+        <div class="fin-add-row">
+          <input type="text" id="edit-fin-input" placeholder="Finance #" maxlength="6">
+          <button id="edit-fin-add-btn" class="btn btn-outline btn-sm">+ Add</button>
+        </div>
+        <div id="edit-fin-tags" class="fin-tags"></div>
+      </div>
+      <div class="setup-actions" style="margin-top:1rem;">
+        <button id="edit-save-btn" class="btn btn-primary">Save Changes</button>
+        <button id="edit-cancel-btn" class="btn btn-secondary">Cancel</button>
+      </div>
+    </section>
+
+    <!-- Users Table -->
+    <section class="card">
+      <h2>All Users</h2>
+      <div class="table-wrap">
+        <table class="summary-table" id="users-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Assigned Offices</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    </div><!-- /users-tab -->
+
+    <!-- ====== REVIEWS TAB ====== -->
+    <div id="reviews-tab" class="admin-tab-panel active">
+
+    <div class="admin-reviews-grid">
+
+    <!-- Create a Review Package -->
+    <section class="card" style="max-width:none;">
+      <h2 style="font-size:1.1rem;margin-bottom:0.2rem;">Create a Review</h2>
+
+      <label for="review-name">Review Name</label>
+      <input type="text" id="review-name" class="input-field" placeholder="e.g. South Texas Week 1" style="margin-bottom:0.6rem;">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.8rem;">
+        <div>
+          <label for="review-start">Start Date</label>
+          <input type="date" id="review-start" required style="width:100%;">
+        </div>
+        <div>
+          <label for="review-end">End Date</label>
+          <input type="date" id="review-end" required style="width:100%;">
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 0.6rem;">
+
+      <label style="font-weight:700;font-size:0.85rem;">Add Offices</label>
+      <div id="review-office-picker" style="margin-bottom:0.4rem;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <div>
+          <label>Office Start</label>
+          <input type="date" id="review-office-start" style="width:100%;">
+        </div>
+        <div>
+          <label>Office End</label>
+          <input type="date" id="review-office-end" style="width:100%;">
+        </div>
+      </div>
+      <button id="review-add-office-btn" class="btn btn-outline btn-sm" style="width:100%;margin-top:0.4rem;">+ Add Office</button>
+      <div id="review-offices-list" class="fin-tags" style="margin-top:0.4rem;"></div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:0.6rem 0;">
+
+      <label style="font-weight:700;font-size:0.85rem;">Assign Leads <span style="font-weight:400;font-size:0.75rem;color:var(--text-light);">(optional)</span></label>
+      <div style="margin-bottom:0.3rem;">
+        <label for="review-user-sel">User</label>
+        <select id="review-user-sel" style="width:100%;"></select>
+      </div>
+      <div style="margin-bottom:0.3rem;">
+        <label for="review-role-sel">Role</label>
+        <select id="review-role-sel" style="width:100%;">
+          <option value="lead">Workbook Lead</option>
+          <option value="teamlead">Review Lead</option>
+        </select>
+      </div>
+      <button id="review-assign-btn" class="btn btn-outline btn-sm" style="width:100%;">+ Assign</button>
+      <div id="review-assigned-tags" class="fin-tags" style="margin-top:0.4rem;"></div>
+
+      <button id="review-create-btn" class="btn btn-primary" style="width:100%;margin-top:0.8rem;">Create Review</button>
+      <p id="review-create-status" class="status-msg" hidden></p>
+    </section>
+
+    <!-- Reviews Table -->
+    <section class="card" style="max-width:none;overflow:hidden;">
+      <h2 style="font-size:1.1rem;margin-bottom:0.5rem;">All Reviews</h2>
+      <div class="table-wrap">
+        <table class="summary-table" id="reviews-table">
+          <thead>
+            <tr>
+              <th>Review</th>
+              <th>Offices</th>
+              <th>Dates</th>
+              <th>Assigned</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reviews-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    </div><!-- /grid -->
+    <section class="card" id="review-edit-section" hidden>
+      <h2 id="review-edit-title">Edit Review</h2>
+      <input type="hidden" id="review-edit-id">
+
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="review-edit-name">Review Name</label>
+          <input type="text" id="review-edit-name" class="input-field">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="review-edit-start">Overall Start Date</label>
+          <input type="date" id="review-edit-start">
+        </div>
+        <div class="form-group">
+          <label for="review-edit-end">Overall End Date</label>
+          <input type="date" id="review-edit-end">
+        </div>
+      </div>
+
+      <!-- Offices -->
+      <label class="admin-label" style="margin-top:0.6rem;">Offices</label>
+      <div style="border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;margin-bottom:1rem;">
+        <div id="review-edit-office-picker"></div>
+        <div class="form-row" style="margin-top:0.5rem;">
+          <div class="form-group">
+            <label>Office Start Date</label>
+            <input type="date" id="review-edit-office-start">
+          </div>
+          <div class="form-group">
+            <label>Office End Date</label>
+            <input type="date" id="review-edit-office-end">
+          </div>
+          <div class="form-group" style="align-self:flex-end;">
+            <button id="review-edit-add-office-btn" class="btn btn-outline btn-sm">+ Add Office</button>
+          </div>
+        </div>
+        <div id="review-edit-offices-list" class="fin-tags" style="margin-top:0.5rem;"></div>
+      </div>
+
+      <!-- Leadership -->
+      <label class="admin-label">Leadership</label>
+      <div class="form-row">
+        <div class="form-group">
+          <select id="review-edit-user-sel"></select>
+        </div>
+        <div class="form-group">
+          <select id="review-edit-role-sel">
+            <option value="lead">Workbook Lead</option>
+            <option value="teamlead">Review Lead</option>
+          </select>
+        </div>
+        <div class="form-group" style="align-self:flex-end;">
+          <button id="review-edit-assign-btn" class="btn btn-outline btn-sm">+ Assign</button>
+        </div>
+      </div>
+      <div id="review-edit-assigned-tags" class="fin-tags"></div>
+      <div class="setup-actions" style="margin-top:1rem;">
+        <button id="review-edit-save-btn" class="btn btn-primary">Save Changes</button>
+        <button id="review-edit-cancel-btn" class="btn btn-secondary">Cancel</button>
+      </div>
+    </section>
+
+    </div><!-- /reviews-tab -->
+
+    <!-- ====== REQUESTS TAB ====== -->
+    <div id="requests-tab" class="admin-tab-panel">
+      <section class="card">
+        <h2>Access Requests</h2>
+        <p class="setup-subtitle">Review and respond to access requests from users. Approve to grant access or deny to reject.</p>
+        <div id="requests-empty" class="empty-state">No pending requests.</div>
+        <div class="table-wrap">
+          <table class="summary-table" id="requests-table" hidden>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Request Type</th>
+                <th>Details</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="requests-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div><!-- /requests-tab -->
+
+    <!-- ====== SYSTEM TAB ====== -->
+    <div id="system-tab" class="admin-tab-panel">
+      <section class="card">
+        <h2>🚀 Go Live — Reset for Production</h2>
+        <p class="setup-subtitle">Prepare the system for a clean start. This keeps all user accounts but resets their passwords to the default (lowercase name, no spaces). All observation data, reviews, schedules, travel surveys, and workbook data will be permanently deleted.</p>
+        <div style="background:rgba(239,68,68,0.08);border:1px solid #ef4444;border-radius:8px;padding:1rem;margin:1rem 0;">
+          <p style="font-weight:700;color:#dc2626;margin:0 0 0.5rem;">⚠️ This action cannot be undone.</p>
+          <ul style="margin:0;padding-left:1.2rem;font-size:0.88rem;color:var(--text);line-height:1.6;">
+            <li><strong>Kept:</strong> User accounts (usernames, display names, roles)</li>
+            <li><strong>Reset:</strong> All passwords → default (lowercase full name, no spaces)</li>
+            <li><strong>Deleted:</strong> All reviews, observations, clerk notes, MH notes, PS 3922, trips, ADUS/SDUS, questionnaires, travel surveys, schedules, workbook data, expenses, access requests</li>
+          </ul>
+        </div>
+        <button id="go-live-btn" class="btn btn-primary" style="margin-top:0.5rem;">🚀 Go Live — Reset for Production</button>
+        <div id="go-live-status" style="margin-top:0.75rem;font-size:0.88rem;" hidden></div>
+      </section>
+
+      <section class="card" style="margin-top:1.5rem;">
+        <h2>⚠️ Full Factory Reset</h2>
+        <p class="setup-subtitle">Completely wipe everything — including all user accounts. Use with extreme caution.</p>
+        <button id="nuke-all-btn" class="btn btn-danger btn-sm" style="background:#991b1b;">&#9888; Full Factory Reset</button>
+      </section>
+    </div><!-- /system-tab -->
+
+  </main>
+
+  <script src="js/sync.js"></script>
+  <script src="js/offices.js"></script>
+  <script src="js/office-picker.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/reviews.js"></script>
+  <script>
+  (function() {
+    var user = Auth.requireAuth(['admin', 'teamlead']);
+    if (!user) return;
+    Auth.renderNavbar();
+
+    // --- Tab switching ---
+    var tabs = document.querySelectorAll('.admin-tab');
+    var panels = document.querySelectorAll('.admin-tab-panel');
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        panels.forEach(function(p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Hide Users and Requests tabs for review leads (admin-only)
+    if (user.role === 'teamlead') {
+      tabs.forEach(function(tab) {
+        if (tab.dataset.tab === 'users-tab' || tab.dataset.tab === 'requests-tab') {
+          tab.style.display = 'none';
+        }
+      });
+    }
+
+    // --- Elements ---
+    var bulkNames    = document.getElementById('bulk-names');
+    var bulkRole     = document.getElementById('bulk-role');
+    var bulkBtn      = document.getElementById('bulk-create-btn');
+    var bulkStatus   = document.getElementById('bulk-status');
+    var editSection  = document.getElementById('edit-section');
+    var editTitle    = document.getElementById('edit-title');
+    var editId       = document.getElementById('edit-id');
+    var editName     = document.getElementById('edit-name');
+    var editEmail    = document.getElementById('edit-email');
+    var editPass     = document.getElementById('edit-pass');
+    var editRole     = document.getElementById('edit-role');
+    var editResetPw  = document.getElementById('edit-reset-pw-btn');
+    var editPwStatus = document.getElementById('edit-pw-status');
+    var editAssignSec= document.getElementById('edit-assign-section');
+    var editFinInput = document.getElementById('edit-fin-input');
+    var editFinAddBtn= document.getElementById('edit-fin-add-btn');
+    var editFinTags  = document.getElementById('edit-fin-tags');
+    var editSaveBtn  = document.getElementById('edit-save-btn');
+    var editCancelBtn= document.getElementById('edit-cancel-btn');
+    var usersBody    = document.getElementById('users-body');
+
+    var editFins = [];
+
+    // Build office lookup
+    var finLookup = {};
+    for (var i = 0; i < OFFICE_LIST.length; i++) {
+      finLookup[OFFICE_LIST[i][0]] = OFFICE_LIST[i][1];
+    }
+
+    // --- Bulk Create ---
+    bulkBtn.addEventListener('click', function() {
+      bulkStatus.hidden = true;
+      var text = bulkNames.value.trim();
+      if (!text) { showBulk('Enter at least one name.', 'error'); return; }
+      var names = text.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+      if (names.length === 0) { showBulk('Enter at least one name.', 'error'); return; }
+      var role = bulkRole.value;
+      var result = Auth.bulkCreate(names, role);
+      var msg = result.created.length + ' user(s) created.';
+      if (result.errors.length > 0) msg += ' Skipped: ' + result.errors.join('; ');
+      showBulk(msg, result.errors.length > 0 ? 'warning' : 'success');
+      if (result.created.length > 0) bulkNames.value = '';
+      renderUsers();
+    });
+
+    function showBulk(msg, type) {
+      bulkStatus.textContent = msg;
+      bulkStatus.className = 'status-msg ' + type;
+      bulkStatus.hidden = false;
+    }
+
+    // --- Edit Section ---
+    editRole.addEventListener('change', function() {
+      editAssignSec.hidden = (editRole.value === 'admin' || editRole.value === 'readonly');
+    });
+
+    function renderEditFinTags() {
+      editFinTags.innerHTML = editFins.map(function(fin) {
+        var name = finLookup[fin] || 'Unknown';
+        return '<span class="fin-tag">' + esc(fin) + ' \u2014 ' + esc(name) +
+          ' <button class="fin-tag-x" data-fin="' + esc(fin) + '">&times;</button></span>';
+      }).join('');
+      editFinTags.querySelectorAll('.fin-tag-x').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          editFins = editFins.filter(function(f) { return f !== btn.dataset.fin; });
+          renderEditFinTags();
+        });
+      });
+    }
+
+    function addEditFin() {
+      var val = editFinInput.value.trim();
+      if (!val) return;
+      if (editFins.indexOf(val) >= 0) { editFinInput.value = ''; return; }
+      editFins.push(val);
+      editFinInput.value = '';
+      renderEditFinTags();
+    }
+    editFinAddBtn.addEventListener('click', addEditFin);
+    editFinInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); addEditFin(); }
+    });
+
+    // Reset to Default Password button
+    editResetPw.addEventListener('click', function() {
+      var name = editName.value.trim();
+      if (!name) return;
+      var defaultPw = name.toLowerCase().replace(/\s+/g, '');
+      editPass.value = defaultPw;
+      editPwStatus.textContent = 'Password reset to default. Status will be "Password change pending".';
+      editPwStatus.style.color = 'var(--warning, #e67e22)';
+      editPass.dataset.isDefault = 'true';
+    });
+
+    // Clear default flag when admin types a custom password
+    editPass.addEventListener('input', function() {
+      editPass.dataset.isDefault = '';
+      if (editPass.value) {
+        editPwStatus.textContent = 'Custom password. Status will be "Active".';
+        editPwStatus.style.color = 'var(--success, #27ae60)';
+      } else {
+        editPwStatus.textContent = '';
+      }
+    });
+
+    editSaveBtn.addEventListener('click', function() {
+      var data = {
+        displayName: editName.value.trim(),
+        email: editEmail.value.trim(),
+        role: editRole.value,
+        assignedFins: (editRole.value === 'admin' || editRole.value === 'readonly') ? [] : editFins.slice()
+      };
+      if (editPass.value) {
+        data.password = editPass.value;
+        // Default password reset → force change; Admin-assigned password → active
+        data.mustChangePassword = (editPass.dataset.isDefault === 'true');
+      }
+      if (!data.displayName) return;
+      Auth.updateUser(editId.value, data);
+      editSection.hidden = true;
+      renderUsers();
+    });
+
+    editCancelBtn.addEventListener('click', function() {
+      editSection.hidden = true;
+    });
+
+    function startEdit(id) {
+      var u = Auth.getUserById(id);
+      if (!u) return;
+      editId.value = u.id;
+      editTitle.textContent = 'Edit: ' + u.displayName;
+      editName.value = u.displayName || '';
+      editEmail.value = u.email || '';
+      editPass.value = '';
+      editRole.value = u.role;
+      editPass.dataset.isDefault = '';
+      editPwStatus.textContent = u.mustChangePassword ? 'Status: Password change pending' : 'Status: Active';
+      editPwStatus.style.color = u.mustChangePassword ? 'var(--warning, #e67e22)' : 'var(--success, #27ae60)';
+      editFins = (u.assignedFins || []).slice();
+      renderEditFinTags();
+      editAssignSec.hidden = (u.role === 'admin' || u.role === 'readonly');
+      editSection.hidden = false;
+      editSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- Users Table ---
+    function renderUsers() {
+      // Reconcile assignedFins against actual reviews on every render
+      var activeRevs = Reviews.getAll();
+      Auth.getUsers().forEach(function(u) {
+        if (!u.assignedFins || u.assignedFins.length === 0) return;
+        var validFins = u.assignedFins.filter(function(fin) {
+          return activeRevs.some(function(r) {
+            return Reviews.hasOffice(r, fin) && r.assignments.some(function(a) { return a.userId === u.id; });
+          });
+        });
+        if (validFins.length !== u.assignedFins.length) {
+          Auth.updateUser(u.id, { assignedFins: validFins });
+        }
+      });
+
+      var users = Auth.getUsers();
+      var roleLabels = Auth.ROLE_LABELS;
+      usersBody.innerHTML = users.map(function(u) {
+        var fins = (u.assignedFins || []).map(function(f) {
+          return f + (finLookup[f] ? ' (' + esc(finLookup[f]) + ')' : '');
+        }).join(', ') || '\u2014';
+        var isSelf = (Auth.currentUser().id === u.id);
+        var status = u.mustChangePassword ? '<span class="pw-pending">Password change pending</span>' : '<span class="pw-ok">Active</span>';
+        return '<tr>' +
+          '<td>' + esc(u.displayName) + (isSelf ? ' <em>(you)</em>' : '') + '</td>' +
+          '<td style="font-size:0.8rem;">' + esc(u.email || '') + '</td>' +
+          '<td><span class="nav-role-tag role-' + u.role + '">' + roleLabels[u.role] + '</span></td>' +
+          '<td class="wrap-cell">' + fins + '</td>' +
+          '<td>' + status + '</td>' +
+          '<td class="actions-cell">' +
+            '<button class="btn btn-outline btn-sm edit-btn" data-id="' + u.id + '">Edit</button> ' +
+            (isSelf ? '' : '<button class="btn btn-outline btn-sm reset-pw-btn" data-id="' + u.id + '" title="Reset to default password">Reset PW</button> ') +
+            (isSelf ? '' : '<button class="btn btn-danger btn-sm del-btn" data-id="' + u.id + '">Delete</button>') +
+          '</td>' +
+        '</tr>';
+      }).join('');
+
+      usersBody.querySelectorAll('.edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { startEdit(btn.dataset.id); });
+      });
+      usersBody.querySelectorAll('.reset-pw-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var u = Auth.getUserById(btn.dataset.id);
+          if (!u) return;
+          var defaultPw = u.displayName.toLowerCase().replace(/\s+/g, '');
+          if (confirm('Reset password for "' + u.displayName + '" to default ("' + defaultPw + '") and require password change?')) {
+            Auth.updateUser(u.id, { password: defaultPw, mustChangePassword: true });
+            renderUsers();
+          }
+        });
+      });
+      usersBody.querySelectorAll('.del-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var u = Auth.getUserById(btn.dataset.id);
+          if (u && confirm('Delete user "' + u.displayName + '"?')) {
+            Auth.deleteUser(u.id);
+            renderUsers();
+          }
+        });
+      });
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    renderUsers();
+
+    // ========================================================
+    //  REVIEWS MANAGEMENT
+    // ========================================================
+    OfficePicker.init('review-office-picker');
+
+    var reviewUserSel    = document.getElementById('review-user-sel');
+    var reviewRoleSel    = document.getElementById('review-role-sel');
+    var reviewAssignBtn  = document.getElementById('review-assign-btn');
+    var reviewAssignTags = document.getElementById('review-assigned-tags');
+    var reviewCreateBtn  = document.getElementById('review-create-btn');
+    var reviewStatus     = document.getElementById('review-create-status');
+    var reviewsBody      = document.getElementById('reviews-body');
+
+    var reviewAssignments = []; // [{ userId, displayName, reviewRole }]
+    var reviewOffices = [];     // [{ financeNum, officeName, startDate, endDate }]
+
+    function populateUserDropdown(sel, excludeArr) {
+      var users = Auth.getUsers();
+      var excluded = {};
+      if (excludeArr) excludeArr.forEach(function(a) { excluded[a.userId] = true; });
+      sel.innerHTML = '<option value="">-- Select user --</option>';
+      users.forEach(function(u) {
+        if (excluded[u.id]) return;
+        sel.innerHTML += '<option value="' + u.id + '">' + esc(u.displayName) + '</option>';
+      });
+    }
+    populateUserDropdown(reviewUserSel, reviewAssignments);
+
+    var roleBadge = { clerk: 'Clerk', lead: 'Workbook Lead', mailhandler: 'Mail Handler', teamlead: 'Review Lead' };
+
+    function renderAssignmentTags(arr, container, onRemove) {
+      container.innerHTML = arr.map(function(a, idx) {
+        return '<span class="fin-tag">' + esc(a.displayName) + ' <em>(' + roleBadge[a.reviewRole] + ')</em>' +
+          ' <button class="fin-tag-x" data-idx="' + idx + '">&times;</button></span>';
+      }).join('');
+      container.querySelectorAll('.fin-tag-x').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          onRemove(parseInt(btn.dataset.idx));
+        });
+      });
+    }
+
+    function rebindAssignTags(arr, container, dropdownSel) {
+      renderAssignmentTags(arr, container, function(idx) {
+        arr.splice(idx, 1);
+        rebindAssignTags(arr, container, dropdownSel);
+        if (dropdownSel) populateUserDropdown(dropdownSel, arr);
+      });
+      var lcEl = document.getElementById('cr-lead-count');
+      if (lcEl) lcEl.textContent = arr.length;
+    }
+
+    // --- Office list rendering ---
+    function renderOfficesList(offices, container, onRemove) {
+      if (offices.length === 0) {
+        container.innerHTML = '<span style="color:var(--text-light);font-size:0.85rem;">No offices added yet.</span>';
+        return;
+      }
+      container.innerHTML = offices.map(function(o, idx) {
+        return '<span class="fin-tag">' + esc(o.officeName) + ' (' + esc(o.financeNum) + ') ' +
+          '<em>' + esc(o.startDate) + ' – ' + esc(o.endDate) + '</em>' +
+          ' <button class="fin-tag-x" data-idx="' + idx + '">&times;</button></span>';
+      }).join('');
+      container.querySelectorAll('.fin-tag-x').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          onRemove(parseInt(btn.dataset.idx));
+        });
+      });
+    }
+
+    function rebindOfficesList(offices, container) {
+      renderOfficesList(offices, container, function(idx) {
+        offices.splice(idx, 1);
+        rebindOfficesList(offices, container);
+      });
+      var cntEl = document.getElementById('cr-office-count');
+      if (cntEl) cntEl.textContent = offices.length;
+    }
+
+    // --- Add Office (create) ---
+    document.getElementById('review-add-office-btn').addEventListener('click', function() {
+      var sel = OfficePicker.getValue('review-office-picker');
+      if (!sel) return;
+      var osd = document.getElementById('review-office-start').value;
+      var oed = document.getElementById('review-office-end').value;
+      if (!osd || !oed) return;
+      // Prevent duplicate
+      for (var i = 0; i < reviewOffices.length; i++) {
+        if (reviewOffices[i].financeNum === sel.fin) return;
+      }
+      reviewOffices.push({ financeNum: sel.fin, officeName: sel.office, startDate: osd, endDate: oed });
+      document.getElementById('review-office-start').value = '';
+      document.getElementById('review-office-end').value = '';
+      rebindOfficesList(reviewOffices, document.getElementById('review-offices-list'));
+    });
+
+    rebindOfficesList(reviewOffices, document.getElementById('review-offices-list'));
+
+    reviewAssignBtn.addEventListener('click', function() {
+      var uid = reviewUserSel.value;
+      if (!uid) return;
+      for (var i = 0; i < reviewAssignments.length; i++) {
+        if (reviewAssignments[i].userId === uid) return;
+      }
+      var uOpt = reviewUserSel.options[reviewUserSel.selectedIndex];
+      reviewAssignments.push({ userId: uid, displayName: uOpt.textContent, reviewRole: reviewRoleSel.value });
+      reviewUserSel.value = '';
+      rebindAssignTags(reviewAssignments, reviewAssignTags, reviewUserSel);
+      populateUserDropdown(reviewUserSel, reviewAssignments);
+    });
+
+    // Assign all offices' finance #s to each user in the assignment list
+    function assignOfficesToUsers(offices, assignments) {
+      assignments.forEach(function(a) {
+        var u = Auth.getUserById(a.userId);
+        if (!u) return;
+        var fins = (u.assignedFins || []).slice();
+        var changed = false;
+        offices.forEach(function(o) {
+          if (fins.indexOf(o.financeNum) === -1) {
+            fins.push(o.financeNum);
+            changed = true;
+          }
+        });
+        if (changed) Auth.updateUser(u.id, { assignedFins: fins });
+      });
+    }
+
+    reviewCreateBtn.addEventListener('click', function() {
+      reviewStatus.hidden = true;
+      var name = document.getElementById('review-name').value.trim();
+      var sd = document.getElementById('review-start').value;
+      var ed = document.getElementById('review-end').value;
+      if (!sd || !ed) { showRevStatus('Please enter overall start and end dates.', 'error'); return; }
+      if (ed < sd) { showRevStatus('End date must be on or after start date.', 'error'); return; }
+      if (reviewOffices.length === 0) { showRevStatus('Please add at least one office.', 'error'); return; }
+      if (!name) name = reviewOffices.map(function(o) { return o.officeName; }).join(', ');
+
+      var assignList = reviewAssignments.map(function(a) { return { userId: a.userId, reviewRole: a.reviewRole }; });
+      Reviews.create({
+        name: name,
+        offices: reviewOffices.slice(),
+        startDate: sd,
+        endDate: ed,
+        assignments: assignList,
+        createdBy: user.id
+      });
+
+      assignOfficesToUsers(reviewOffices, assignList);
+
+      showRevStatus('Review created!', 'success');
+      reviewAssignments = [];
+      reviewOffices = [];
+      reviewAssignTags.innerHTML = '';
+      populateUserDropdown(reviewUserSel, reviewAssignments);
+      rebindOfficesList(reviewOffices, document.getElementById('review-offices-list'));
+      document.getElementById('review-name').value = '';
+      document.getElementById('review-start').value = '';
+      document.getElementById('review-end').value = '';
+      renderReviews();
+      renderUsers();
+    });
+
+    function showRevStatus(msg, type) {
+      reviewStatus.textContent = msg;
+      reviewStatus.className = 'status-msg ' + type;
+      reviewStatus.hidden = false;
+    }
+
+    // --- Edit Review ---
+    var revEditSection    = document.getElementById('review-edit-section');
+    var revEditId         = document.getElementById('review-edit-id');
+    var revEditName       = document.getElementById('review-edit-name');
+    var revEditStart      = document.getElementById('review-edit-start');
+    var revEditEnd        = document.getElementById('review-edit-end');
+    var revEditUserSel    = document.getElementById('review-edit-user-sel');
+    var revEditRoleSel    = document.getElementById('review-edit-role-sel');
+    var revEditAssignBtn  = document.getElementById('review-edit-assign-btn');
+    var revEditAssignTags = document.getElementById('review-edit-assigned-tags');
+    var revEditSaveBtn    = document.getElementById('review-edit-save-btn');
+    var revEditCancelBtn  = document.getElementById('review-edit-cancel-btn');
+
+    var revEditAssignments = [];
+    var revEditOffices = [];
+    populateUserDropdown(revEditUserSel, revEditAssignments);
+
+    // Edit office picker
+    OfficePicker.init('review-edit-office-picker');
+
+    document.getElementById('review-edit-add-office-btn').addEventListener('click', function() {
+      var sel = OfficePicker.getValue('review-edit-office-picker');
+      if (!sel) return;
+      var osd = document.getElementById('review-edit-office-start').value;
+      var oed = document.getElementById('review-edit-office-end').value;
+      if (!osd || !oed) return;
+      for (var i = 0; i < revEditOffices.length; i++) {
+        if (revEditOffices[i].financeNum === sel.fin) return;
+      }
+      revEditOffices.push({ financeNum: sel.fin, officeName: sel.office, startDate: osd, endDate: oed });
+      document.getElementById('review-edit-office-start').value = '';
+      document.getElementById('review-edit-office-end').value = '';
+      rebindOfficesList(revEditOffices, document.getElementById('review-edit-offices-list'));
+    });
+
+    revEditAssignBtn.addEventListener('click', function() {
+      var uid = revEditUserSel.value;
+      if (!uid) return;
+      for (var i = 0; i < revEditAssignments.length; i++) {
+        if (revEditAssignments[i].userId === uid) return;
+      }
+      var uOpt = revEditUserSel.options[revEditUserSel.selectedIndex];
+      revEditAssignments.push({ userId: uid, displayName: uOpt.textContent, reviewRole: revEditRoleSel.value });
+      revEditUserSel.value = '';
+      rebindAssignTags(revEditAssignments, revEditAssignTags, revEditUserSel);
+      populateUserDropdown(revEditUserSel, revEditAssignments);
+    });
+
+    revEditSaveBtn.addEventListener('click', function() {
+      var assignList = revEditAssignments.map(function(a) { return { userId: a.userId, reviewRole: a.reviewRole }; });
+      Reviews.update(revEditId.value, {
+        name: revEditName.value.trim(),
+        offices: revEditOffices.slice(),
+        startDate: revEditStart.value,
+        endDate: revEditEnd.value,
+        assignments: assignList
+      });
+      assignOfficesToUsers(revEditOffices, assignList);
+      revEditSection.hidden = true;
+      renderReviews();
+      renderUsers();
+    });
+
+    revEditCancelBtn.addEventListener('click', function() {
+      revEditSection.hidden = true;
+    });
+
+    function startEditReview(id) {
+      var rev = Reviews.getById(id);
+      if (!rev) return;
+      revEditId.value = rev.id;
+      document.getElementById('review-edit-title').textContent = 'Edit Review: ' + (rev.name || rev.officeName || 'Review');
+      revEditName.value = rev.name || '';
+      revEditStart.value = rev.startDate;
+      revEditEnd.value = rev.endDate;
+      var usersMap = {};
+      Auth.getUsers().forEach(function(u) { usersMap[u.id] = u.displayName; });
+      revEditAssignments = rev.assignments.map(function(a) {
+        return { userId: a.userId, displayName: usersMap[a.userId] || '(deleted)', reviewRole: a.reviewRole };
+      });
+      revEditOffices = (rev.offices || []).map(function(o) { return { financeNum: o.financeNum, officeName: o.officeName, startDate: o.startDate, endDate: o.endDate }; });
+      rebindAssignTags(revEditAssignments, revEditAssignTags, revEditUserSel);
+      rebindOfficesList(revEditOffices, document.getElementById('review-edit-offices-list'));
+      populateUserDropdown(revEditUserSel, revEditAssignments);
+      revEditSection.hidden = false;
+      revEditSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- Reviews Table ---
+    function renderReviews() {
+      var reviews = Reviews.getAll();
+      reviews.sort(function(a, b) {
+        if (b.startDate > a.startDate) return 1;
+        if (b.startDate < a.startDate) return -1;
+        return 0;
+      });
+      var usersMap = {};
+      Auth.getUsers().forEach(function(u) { usersMap[u.id] = u.displayName; });
+
+      reviewsBody.innerHTML = reviews.map(function(r) {
+        var assigned = r.assignments.map(function(a) {
+          return esc(usersMap[a.userId] || '(deleted)') + ' <em>(' + roleBadge[a.reviewRole] + ')</em>';
+        }).join(', ') || '&mdash;';
+        var officesList = (r.offices || []).map(function(o) {
+          return esc(o.officeName) + ' (' + esc(o.financeNum) + ')';
+        }).join('<br>') || esc(r.officeName || '—');
+        return '<tr>' +
+          '<td>' + esc(r.name || r.officeName || '—') + '</td>' +
+          '<td class="wrap-cell">' + officesList + '</td>' +
+          '<td>' + esc(r.startDate) + ' &ndash; ' + esc(r.endDate) + '</td>' +
+          '<td class="wrap-cell">' + assigned + '</td>' +
+          '<td class="actions-cell">' +
+            '<button class="btn btn-outline btn-sm rev-edit-btn" data-id="' + r.id + '">Edit</button> ' +
+            '<button class="btn btn-sm rev-reset-btn" data-id="' + r.id + '" style="background:#dc2626;color:#fff;">Reset</button> ' +
+            '<button class="btn btn-danger btn-sm rev-del-btn" data-id="' + r.id + '">Delete</button>' +
+          '</td></tr>';
+      }).join('');
+
+      if (reviews.length === 0) {
+        reviewsBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;">No reviews created yet.</td></tr>';
+      }
+
+      reviewsBody.querySelectorAll('.rev-edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { startEditReview(btn.dataset.id); });
+      });
+      reviewsBody.querySelectorAll('.rev-del-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var rev = Reviews.getById(btn.dataset.id);
+          if (rev && confirm('Delete review "' + (rev.name || rev.officeName || 'Review') + '"? This will permanently remove ALL associated data (observations, schedule, travel, etc).')) {
+            // Delete all observations for this review
+            var STORAGE_KEY = 'timeTracker_observations';
+            try {
+              var all = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+              all = all.filter(function(o) { return o.reviewId !== rev.id; });
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+            } catch(e) {}
+
+            // Remove ALL localStorage keys that contain this reviewId
+            var keysToRemove = [];
+            for (var i = 0; i < localStorage.length; i++) {
+              var key = localStorage.key(i);
+              if (key && key.indexOf(rev.id) !== -1) {
+                keysToRemove.push(key);
+              }
+            }
+            keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+
+            // Clean PS 3922 data
+            try {
+              var ps3922 = JSON.parse(localStorage.getItem('clerk_obs_3922')) || {};
+              Object.keys(ps3922).forEach(function(obsId) {
+                if (obsId.indexOf(rev.id) !== -1) delete ps3922[obsId];
+              });
+              localStorage.setItem('clerk_obs_3922', JSON.stringify(ps3922));
+            } catch(e) {}
+
+            // Clear reviewDaySetup if it references this review
+            try {
+              var setup = JSON.parse(localStorage.getItem('reviewDaySetup') || '{}');
+              if (setup.reviewId === rev.id) localStorage.removeItem('reviewDaySetup');
+            } catch(e) {}
+
+            // Clean up user assignedFins — reconcile ALL users against existing reviews
+            Reviews.remove(rev.id);
+            var remainingRevs = Reviews.getAll();
+            Auth.getUsers().forEach(function(u) {
+              if (!u.assignedFins || u.assignedFins.length === 0) return;
+              // Keep only fins that still have an active review with this user assigned
+              var validFins = u.assignedFins.filter(function(fin) {
+                return remainingRevs.some(function(r) {
+                  return Reviews.hasOffice(r, fin) && r.assignments.some(function(a) { return a.userId === u.id; });
+                });
+              });
+              if (validFins.length !== u.assignedFins.length) {
+                Auth.updateUser(u.id, { assignedFins: validFins });
+              }
+            });
+
+            renderReviews();
+            renderUsers();
+          }
+        });
+      });
+
+      // --- Reset Review Data ---
+      reviewsBody.querySelectorAll('.rev-reset-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var rev = Reviews.getById(btn.dataset.id);
+          if (!rev) return;
+          var input = prompt('This will permanently delete ALL observation data for "' + (rev.name || rev.officeName || 'Review') + '".\n\nThis includes Clerk Notes, PS 3922, Trips, SCF Hub, ADUS/SDUS, Questionnaire, and Summarization for ALL users and days.\n\nType YES to confirm:');
+          if (input !== 'YES') return;
+
+          // Delete all observations for this review
+          var STORAGE_KEY = 'timeTracker_observations';
+          try {
+            var all = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            all = all.filter(function(o) { return o.reviewId !== rev.id; });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+          } catch(e) {}
+
+          // Delete scoped tab data for all users/days of this review
+          var tabBaseKeys = [
+            'clerk_obs_trips', 'clerk_obs_trips_mailflow', 'clerk_obs_scf',
+            'clerk_obs_adus', 'clerk_obs_questionnaire', 'clerk_obs_summarization',
+            'clerk_obs_eod_dismissed'
+          ];
+          var keysToRemove = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf(rev.id) !== -1) {
+              for (var j = 0; j < tabBaseKeys.length; j++) {
+                if (key.indexOf(tabBaseKeys[j]) === 0) {
+                  keysToRemove.push(key);
+                  break;
+                }
+              }
+            }
+          }
+          keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+
+          // Clean PS 3922 data (obs IDs contain reviewId)
+          try {
+            var ps3922 = JSON.parse(localStorage.getItem('clerk_obs_3922')) || {};
+            var changed = false;
+            Object.keys(ps3922).forEach(function(obsId) {
+              if (obsId.indexOf(rev.id) !== -1) {
+                delete ps3922[obsId];
+                changed = true;
+              }
+            });
+            if (changed) localStorage.setItem('clerk_obs_3922', JSON.stringify(ps3922));
+          } catch(e) {}
+
+          // Clear reviewDaySetup if it references this review
+          try {
+            var setup = JSON.parse(localStorage.getItem('reviewDaySetup') || '{}');
+            if (setup.reviewId === rev.id) localStorage.removeItem('reviewDaySetup');
+          } catch(e) {}
+
+          alert('All data for "' + (rev.name || rev.officeName || 'Review') + '" has been reset.');
+        });
+      });
+    }
+
+    renderReviews();
+
+    // ========================================================
+    //  REQUESTS MANAGEMENT
+    // ========================================================
+    var requestsTable = document.getElementById('requests-table');
+    var requestsBody  = document.getElementById('requests-body');
+    var requestsEmpty = document.getElementById('requests-empty');
+
+    function renderRequests() {
+      var reqs = Auth.getRequests();
+      // Sort: pending first, then by date descending
+      reqs.sort(function(a, b) {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        return b.createdAt > a.createdAt ? 1 : -1;
+      });
+
+      if (reqs.length === 0) {
+        requestsEmpty.style.display = '';
+        requestsTable.hidden = true;
+        return;
+      }
+      requestsEmpty.style.display = 'none';
+      requestsTable.hidden = false;
+
+      var typeLabels = { review_access: 'Review Access', review_role: 'Role Change' };
+
+      requestsBody.innerHTML = reqs.map(function(r) {
+        var statusBadge = '';
+        if (r.status === 'pending') {
+          statusBadge = '<span class="travel-badge travel-badge--pending">Pending</span>';
+        } else if (r.status === 'approved') {
+          statusBadge = '<span class="travel-badge travel-badge--done">Approved</span>';
+        } else {
+          statusBadge = '<span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:0.78rem;font-weight:600;background:#fecaca;color:#991b1b;">Denied</span>';
+        }
+
+        var actions = '';
+        if (r.status === 'pending') {
+          actions = '<button class="btn btn-primary btn-sm req-approve-btn" data-id="' + r.id + '">Approve</button> ' +
+                    '<button class="btn btn-danger btn-sm req-deny-btn" data-id="' + r.id + '">Deny</button>';
+        } else {
+          actions = '<button class="btn btn-outline btn-sm req-dismiss-btn" data-id="' + r.id + '">Dismiss</button>';
+        }
+
+        var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—';
+
+        return '<tr>' +
+          '<td>' + esc(r.userName || '—') + '</td>' +
+          '<td>' + (typeLabels[r.type] || r.type) + '</td>' +
+          '<td>' + esc(r.detail) + '</td>' +
+          '<td>' + date + '</td>' +
+          '<td>' + statusBadge + '</td>' +
+          '<td class="actions-cell">' + actions + '</td>' +
+        '</tr>';
+      }).join('');
+
+      // Approve handlers
+      requestsBody.querySelectorAll('.req-approve-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          Auth.resolveRequest(btn.dataset.id, 'approved');
+          renderRequests();
+        });
+      });
+      // Deny handlers
+      requestsBody.querySelectorAll('.req-deny-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          Auth.resolveRequest(btn.dataset.id, 'denied');
+          renderRequests();
+        });
+      });
+      // Dismiss (remove resolved)
+      requestsBody.querySelectorAll('.req-dismiss-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var reqs = Auth.getRequests().filter(function(r) { return r.id !== btn.dataset.id; });
+          localStorage.setItem('clerk_obs_requests', JSON.stringify(reqs));
+          renderRequests();
+        });
+      });
+    }
+
+    renderRequests();
+
+    // --- Go Live: Reset for Production ---
+    document.getElementById('go-live-btn').addEventListener('click', function() {
+      var input = prompt('This will reset ALL data for a clean production start.\nUser accounts will be kept but passwords will be reset to defaults.\n\nType GO LIVE to confirm:');
+      if (input !== 'GO LIVE') return;
+
+      var statusEl = document.getElementById('go-live-status');
+      statusEl.hidden = false;
+      statusEl.innerHTML = '<span style="color:#d97706;">⏳ Resetting...</span>';
+
+      // 1. Save users and reset passwords
+      var users = Auth.getUsers();
+      users.forEach(function(u) {
+        // Default password = lowercase displayName or username, no spaces
+        var defaultPw = (u.displayName || u.username || '').toLowerCase().replace(/\s+/g, '');
+        Auth.updateUser(u.id, { password: defaultPw, mustChangePassword: true });
+      });
+
+      // 2. Delete all reviews
+      localStorage.removeItem('clerk_obs_reviews');
+
+      // 3. Delete all observations
+      localStorage.removeItem('timeTracker_observations');
+
+      // 4. Delete all dynamic keys (schedules, travel, workbook, expense, etc.)
+      var keysToRemove = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (!key) continue;
+        // Keep: user accounts, session, dark mode, preferences
+        if (key === 'clerk_obs_users') continue;
+        if (key === 'clerk_obs_session') continue;
+        if (key === 'clerk_obs_dark') continue;
+        if (key === 'clerk_obs_prefs') continue;
+        // Remove everything else with clerk_obs_ prefix
+        if (key.indexOf('clerk_obs_') === 0) keysToRemove.push(key);
+        // Remove tab data keys
+        if (key === 'reviewDaySetup') keysToRemove.push(key);
+      }
+      keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+
+      // 5. Clear IndexedDB (workbook file blobs)
+      try {
+        var delReq = indexedDB.deleteDatabase('clerk_obs_workbooks');
+        delReq.onsuccess = function() { console.log('IndexedDB cleared.'); };
+        delReq.onerror = function() { console.warn('IndexedDB clear failed.'); };
+      } catch(e) {}
+
+      statusEl.innerHTML = '<span style="color:#16a34a;">✅ Go Live reset complete! All data cleared. User accounts preserved with default passwords.</span>';
+      setTimeout(function() { location.reload(); }, 2000);
+    });
+
+    // --- Full Factory Reset ---
+    document.getElementById('nuke-all-btn').addEventListener('click', function() {
+      if (prompt('This will DELETE everything — all users, reviews, observations, schedules, travel, and settings.\n\nType DELETE to confirm:') !== 'DELETE') return;
+      localStorage.clear();
+      try { indexedDB.deleteDatabase('clerk_obs_workbooks'); } catch(e) {}
+      alert('All data cleared. Page will reload.');
+      location.reload();
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RPOO Function 4 Review Program — Settings</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+    @media (max-width: 700px) { .settings-grid { grid-template-columns: 1fr; } }
+    .settings-card { padding: 1.5rem; }
+    .settings-card h3 { margin: 0 0 0.75rem; font-size: 1.05rem; }
+    .settings-card p { font-size: 0.85rem; color: var(--text-light); margin: 0 0 1rem; }
+
+    /* Profile info table */
+    .profile-table { width: 100%; border-collapse: collapse; }
+    .profile-table td { padding: 0.4rem 0; font-size: 0.9rem; }
+    .profile-table td:first-child { font-weight: 600; width: 40%; color: var(--text-light); }
+
+    /* Theme selector */
+    .theme-options { display: flex; gap: 0.75rem; }
+    .theme-btn { flex: 1; padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; text-align: center; font-size: 0.85rem; font-weight: 600; transition: border-color 0.2s, box-shadow 0.2s; background: var(--bg); }
+    .theme-btn:hover { border-color: var(--primary); }
+    .theme-btn.active { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+    .theme-btn .theme-icon { font-size: 1.5rem; display: block; margin-bottom: 0.3rem; }
+    .dark .theme-btn { background: var(--card-bg); border-color: var(--border); color: var(--text); }
+    .dark .theme-btn.active { border-color: var(--primary); }
+
+    /* Font size slider */
+    .font-size-control { display: flex; align-items: center; gap: 0.75rem; }
+    .font-size-control input[type="range"] { flex: 1; }
+    .font-size-control span { font-weight: 600; min-width: 3rem; text-align: center; }
+
+    /* Compact toggle */
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-row label { font-size: 0.9rem; font-weight: 500; }
+    .toggle-row .toggle-desc { font-size: 0.78rem; color: var(--text-light); margin-top: 0.15rem; }
+    .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-switch .slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 24px; cursor: pointer; transition: background 0.2s; }
+    .toggle-switch .slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: transform 0.2s; }
+    .toggle-switch input:checked + .slider { background: var(--primary); }
+    .toggle-switch input:checked + .slider::before { transform: translateX(20px); }
+
+    /* Password form */
+    .pw-form .form-group { margin-bottom: 0.75rem; }
+    .pw-form label { font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem; }
+    .pw-form input { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 0.9rem; background: var(--bg); color: var(--text); }
+    .dark .pw-form input { background: var(--card-bg); border-color: var(--border); color: var(--text); }
+
+    /* Request card */
+    .req-form .form-group { margin-bottom: 0.75rem; }
+  </style>
+  <script>if(localStorage.getItem('clerk_obs_dark')!=='0')document.documentElement.classList.add('dark');</script>
+</head>
+<body>
+  <nav class="navbar">
+    <h1 class="logo">RPOO Function 4 Review Program</h1>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="summary.html">Review Dashboard</a>
+      <a href="help.html">Help</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h2 style="margin-bottom:0.25rem;">Profile &amp; Settings</h2>
+    <p class="setup-subtitle" style="margin-bottom:0;">Customize your experience and manage your account.</p>
+
+    <div class="settings-grid">
+
+      <!-- Profile Info -->
+      <section class="card settings-card">
+        <h3>&#128100; Profile</h3>
+        <table class="profile-table">
+          <tr><td>Name</td><td id="prof-name"></td></tr>
+          <tr><td>Username</td><td id="prof-username"></td></tr>
+          <tr><td>Access Level</td><td id="prof-role"></td></tr>
+          <tr><td>Member Since</td><td id="prof-since"></td></tr>
+        </table>
+      </section>
+
+      <!-- Theme -->
+      <section class="card settings-card">
+        <h3>&#127912; Appearance</h3>
+        <p>Choose your preferred theme.</p>
+        <div class="theme-options">
+          <button class="theme-btn" id="theme-light" data-theme="light">
+            <span class="theme-icon">&#9728;&#65039;</span> Light
+          </button>
+          <button class="theme-btn" id="theme-dark" data-theme="dark">
+            <span class="theme-icon">&#9790;</span> Dark
+          </button>
+        </div>
+      </section>
+
+      <!-- Display Preferences -->
+      <section class="card settings-card">
+        <h3>&#9881;&#65039; Display Preferences</h3>
+        <div class="toggle-row">
+          <div>
+            <label>Compact View</label>
+            <div class="toggle-desc">Reduce spacing on review cards and tables.</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pref-compact">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <label>Show Finance Numbers</label>
+            <div class="toggle-desc">Display finance numbers on review cards.</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pref-finance" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <label>Animations</label>
+            <div class="toggle-desc">Enable page transition animations.</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pref-animations" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Change Password -->
+      <section class="card settings-card">
+        <h3>&#128274; Change Password</h3>
+        <p>Update your account password.</p>
+        <div class="pw-form">
+          <div class="form-group">
+            <label for="pw-current">Current Password</label>
+            <input type="password" id="pw-current" autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label for="pw-new">New Password</label>
+            <input type="password" id="pw-new" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="pw-confirm">Confirm New Password</label>
+            <input type="password" id="pw-confirm" autocomplete="new-password">
+          </div>
+          <button class="btn btn-primary" id="pw-save-btn">Update Password</button>
+          <p id="pw-status" class="status-msg" hidden></p>
+        </div>
+      </section>
+
+      <!-- Access Level Request -->
+      <section class="card settings-card">
+        <h3>&#128221; Request Access Level Change</h3>
+        <p>Submit a request to change your system access level.</p>
+        <div class="req-form">
+          <div class="form-group">
+            <label for="req-access-level">Desired Access Level</label>
+            <select id="req-access-level" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:var(--radius);font-size:0.9rem;background:var(--bg);color:var(--text);">
+            </select>
+          </div>
+          <button class="btn btn-primary" id="req-access-btn">Submit Request</button>
+          <p id="req-access-status" class="status-msg" hidden></p>
+        </div>
+      </section>
+
+      <!-- Data & Export -->
+      <section class="card settings-card">
+        <h3>&#128230; Data</h3>
+        <p>Export your observation data.</p>
+        <button class="btn btn-outline" id="export-btn">Export My Data (JSON)</button>
+        <p id="export-status" class="status-msg" style="margin-top:0.5rem;" hidden></p>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="js/sync.js"></script>
+  <script src="js/offices.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/reviews.js"></script>
+  <script src="js/storage.js"></script>
+  <script>
+  (function() {
+    var user = Auth.requireAuth();
+    if (!user) return;
+    Auth.renderNavbar();
+
+    var PREFS_KEY = 'clerk_obs_prefs';
+
+    function getPrefs() {
+      try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; }
+      catch(e) { return {}; }
+    }
+    function savePrefs(p) { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); }
+
+    // ---- Profile Info ----
+    document.getElementById('prof-name').textContent = user.displayName;
+    document.getElementById('prof-username').textContent = user.username;
+    document.getElementById('prof-role').textContent = Auth.ROLE_LABELS[user.role] || user.role;
+    var allUsers = Auth.getUsers();
+    var fullUser = null;
+    for (var i = 0; i < allUsers.length; i++) {
+      if (allUsers[i].id === user.id) { fullUser = allUsers[i]; break; }
+    }
+    if (fullUser && fullUser.createdAt) {
+      var d = new Date(fullUser.createdAt);
+      document.getElementById('prof-since').textContent = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } else {
+      document.getElementById('prof-since').textContent = '—';
+    }
+
+    // ---- Theme ----
+    var prefs = getPrefs();
+    var currentTheme = prefs.theme || (localStorage.getItem('clerk_obs_dark') === '0' ? 'light' : 'dark');
+
+    function applyTheme(theme) {
+      prefs.theme = theme;
+      savePrefs(prefs);
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      localStorage.setItem('clerk_obs_dark', theme === 'dark' ? '1' : '0');
+      updateThemeButtons();
+    }
+
+    function updateThemeButtons() {
+      document.querySelectorAll('.theme-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.theme === (prefs.theme || currentTheme));
+      });
+    }
+
+    document.querySelectorAll('.theme-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { applyTheme(btn.dataset.theme); });
+    });
+    updateThemeButtons();
+
+    // ---- Display Preferences ----
+    var compactEl = document.getElementById('pref-compact');
+    var financeEl = document.getElementById('pref-finance');
+    var animEl    = document.getElementById('pref-animations');
+
+    compactEl.checked  = !!prefs.compact;
+    financeEl.checked  = prefs.showFinance !== false;
+    animEl.checked     = prefs.animations !== false;
+
+    compactEl.addEventListener('change', function() { prefs.compact = compactEl.checked; savePrefs(prefs); });
+    financeEl.addEventListener('change', function() { prefs.showFinance = financeEl.checked; savePrefs(prefs); });
+    animEl.addEventListener('change', function() { prefs.animations = animEl.checked; savePrefs(prefs); });
+
+    // ---- Change Password ----
+    document.getElementById('pw-save-btn').addEventListener('click', function() {
+      var curPw  = document.getElementById('pw-current').value;
+      var newPw  = document.getElementById('pw-new').value;
+      var confPw = document.getElementById('pw-confirm').value;
+      var status = document.getElementById('pw-status');
+
+      if (!curPw || !newPw || !confPw) {
+        status.textContent = 'Please fill in all fields.';
+        status.className = 'status-msg error'; status.hidden = false; return;
+      }
+      if (newPw.length < 4) {
+        status.textContent = 'New password must be at least 4 characters.';
+        status.className = 'status-msg error'; status.hidden = false; return;
+      }
+      if (newPw !== confPw) {
+        status.textContent = 'New passwords do not match.';
+        status.className = 'status-msg error'; status.hidden = false; return;
+      }
+
+      // Verify current password
+      if (!fullUser || fullUser.password !== curPw) {
+        status.textContent = 'Current password is incorrect.';
+        status.className = 'status-msg error'; status.hidden = false; return;
+      }
+
+      Auth.updateUser(user.id, { password: newPw });
+      document.getElementById('pw-current').value = '';
+      document.getElementById('pw-new').value = '';
+      document.getElementById('pw-confirm').value = '';
+      status.textContent = 'Password updated successfully!';
+      status.className = 'status-msg success'; status.hidden = false;
+    });
+
+    // ---- Access Level Request ----
+    var lvlSelect = document.getElementById('req-access-level');
+    ['teamlead', 'reviewer', 'readonly'].forEach(function(r) {
+      if (r !== user.role) {
+        var opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = Auth.ROLE_LABELS[r] || r;
+        lvlSelect.appendChild(opt);
+      }
+    });
+
+    document.getElementById('req-access-btn').addEventListener('click', function() {
+      var status = document.getElementById('req-access-status');
+      var desired = lvlSelect.options[lvlSelect.selectedIndex];
+      if (!desired || !desired.value) {
+        status.textContent = 'Please select an access level.';
+        status.className = 'status-msg error'; status.hidden = false; return;
+      }
+      Auth.submitRequest({ userId: user.id, userName: user.displayName, type: 'access', detail: desired.text });
+      status.textContent = 'Request submitted! An admin will review it.';
+      status.className = 'status-msg success'; status.hidden = false;
+    });
+
+    // ---- Export Data ----
+    document.getElementById('export-btn').addEventListener('click', function() {
+      var allObs = Storage.hydrate(Storage.getAll());
+      var myObs = Auth.filterVisible(allObs);
+      var blob = new Blob([JSON.stringify(myObs, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'observations-' + user.username + '-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      var status = document.getElementById('export-status');
+      status.textContent = 'Data exported!';
+      status.className = 'status-msg success'; status.hidden = false;
+    });
+
+  })();
+  </script>
+</body>
+</html>

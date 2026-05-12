@@ -562,13 +562,8 @@ var Auth = (function() {
     randWrap.style.cssText = 'padding:0.35rem 0.5rem;';
     randWrap.innerHTML =
       '<div id="dd-rand-info" style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.3rem;"></div>' +
-      '<div id="dd-rand-names" style="font-size:0.75rem;padding:0.3rem;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);min-height:40px;max-height:80px;overflow-y:auto;margin-bottom:0.3rem;white-space:pre-line;"></div>' +
-      '<div style="display:flex;align-items:center;gap:0.35rem;margin:0.3rem 0;">' +
-        '<label style="font-size:0.72rem;font-weight:600;">Pick:</label>' +
-        '<input type="number" id="dd-rand-count" class="util-calc-input" value="1" min="1" style="width:42px;font-size:0.75rem;">' +
-        '<button id="dd-rand-btn" class="btn btn-primary btn-sm" style="flex:1;font-size:0.72rem;padding:0.2rem 0.4rem;">🎲 Randomize</button>' +
-      '</div>' +
-      '<div id="dd-rand-result" style="min-height:20px;padding:0.3rem;background:var(--bg-light);border:1px solid var(--border);border-radius:4px;font-size:0.78rem;color:var(--success);white-space:pre-line;"></div>';
+      '<button id="dd-rand-btn" class="btn btn-primary btn-sm" style="width:100%;font-size:0.75rem;padding:0.3rem 0.4rem;">🎲 Randomize Pending Surveys</button>' +
+      '<div id="dd-rand-result" style="min-height:20px;padding:0.3rem;margin-top:0.3rem;background:var(--bg-light);border:1px solid var(--border);border-radius:4px;font-size:0.78rem;white-space:pre-line;"></div>';
     panel.appendChild(randWrap);
 
     // --- Mock Data Generator Buttons ---
@@ -658,23 +653,20 @@ var Auth = (function() {
     drawer.appendChild(panel);
     document.body.appendChild(drawer);
 
-    // Wire randomizer — auto-load from active travel survey
+    // Wire randomizer — auto-fill pending travel surveys with random data
     var ddRandInfo = document.getElementById('dd-rand-info');
-    var ddRandNames = document.getElementById('dd-rand-names');
     var ddRandBtn = document.getElementById('dd-rand-btn');
-    var ddRandCount = document.getElementById('dd-rand-count');
     var ddRandResult = document.getElementById('dd-rand-result');
 
-    function ddLoadTravelNames() {
+    function ddGetTravelKey() {
       var setup = null;
       try { setup = JSON.parse(localStorage.getItem('reviewDaySetup')); } catch(e) {}
       var reviewId = (setup && setup.reviewId) || '';
       if (!reviewId) {
         var params = new URLSearchParams(window.location.search);
-        reviewId = params.get('travelReview') || params.get('review') || '';
+        reviewId = params.get('travelReview') || params.get('review') || params.get('rid') || '';
       }
       if (!reviewId) {
-        // Try to find any travel survey key
         for (var i = 0; i < localStorage.length; i++) {
           var k = localStorage.key(i);
           if (k && k.indexOf('clerk_obs_travel_survey_') === 0) {
@@ -683,37 +675,83 @@ var Auth = (function() {
           }
         }
       }
-      if (!reviewId) {
-        ddRandInfo.textContent = 'No active travel survey found.';
-        ddRandNames.textContent = '—';
-        return [];
-      }
-      var data = null;
-      try { data = JSON.parse(localStorage.getItem('clerk_obs_travel_survey_' + reviewId)); } catch(e) {}
-      if (!data || !data.assignments || !data.assignments.length) {
-        ddRandInfo.textContent = 'Review ' + reviewId.substring(0, 8) + '… — no assignments.';
-        ddRandNames.textContent = '—';
-        return [];
-      }
-      var names = data.assignments.map(function(a) { return a.name; }).filter(Boolean);
-      ddRandInfo.textContent = 'Review ' + reviewId.substring(0, 8) + '… — ' + names.length + ' reviewer' + (names.length !== 1 ? 's' : '');
-      ddRandNames.textContent = names.join('\n');
-      return names;
+      return reviewId ? 'clerk_obs_travel_survey_' + reviewId : '';
     }
-    var cachedNames = ddLoadTravelNames();
+
+    function ddUpdateInfo() {
+      var key = ddGetTravelKey();
+      if (!key) { ddRandInfo.textContent = 'No active travel survey found.'; return; }
+      try {
+        var data = JSON.parse(localStorage.getItem(key)) || {};
+        var total = (data.assignments || []).length;
+        var pending = (data.assignments || []).filter(function(a) { return !data.responses || !data.responses[a.userId]; }).length;
+        ddRandInfo.textContent = total + ' travelers, ' + pending + ' pending';
+      } catch(e) { ddRandInfo.textContent = 'Error reading survey.'; }
+    }
+    ddUpdateInfo();
 
     if (ddRandBtn) {
       ddRandBtn.addEventListener('click', function() {
-        cachedNames = ddLoadTravelNames();
-        if (cachedNames.length === 0) { ddRandResult.textContent = 'No names in survey.'; ddRandResult.style.color = 'var(--danger)'; return; }
-        var count = Math.min(parseInt(ddRandCount.value) || 1, cachedNames.length);
-        var arr = cachedNames.slice();
-        for (var i = arr.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+        var key = ddGetTravelKey();
+        if (!key) { ddRandResult.textContent = 'No travel survey found.'; ddRandResult.style.color = 'var(--danger)'; return; }
+        var data = null;
+        try { data = JSON.parse(localStorage.getItem(key)); } catch(e) {}
+        if (!data || !data.assignments || !data.assignments.length) {
+          ddRandResult.textContent = 'No travelers assigned.'; ddRandResult.style.color = 'var(--danger)'; return;
         }
+        if (!data.responses) data.responses = {};
+
+        // Find pending (no response yet)
+        var pending = data.assignments.filter(function(a) { return !data.responses[a.userId]; });
+        if (pending.length === 0) {
+          ddRandResult.textContent = 'All surveys already submitted!'; ddRandResult.style.color = 'var(--success)'; return;
+        }
+
+        // Random helpers
+        var airlines = ['Delta', 'United', 'American', 'Southwest', 'JetBlue', 'Spirit', 'Frontier'];
+        var airports = ['JFK', 'LGA', 'EWR', 'BDL', 'PHL', 'BOS', 'DCA', 'IAD', 'ATL', 'ORD', 'CLT', 'PIT'];
+        function randEl(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function randPhone() { return '(' + (200 + Math.floor(Math.random() * 800)) + ') ' + (200 + Math.floor(Math.random() * 800)) + '-' + (1000 + Math.floor(Math.random() * 9000)); }
+        function randFlight() { return String(100 + Math.floor(Math.random() * 9000)); }
+        function randTime() { var h = 5 + Math.floor(Math.random() * 16); var m = Math.floor(Math.random() * 4) * 15; return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); }
+
+        // Get review dates for realistic arrival/departure
+        var review = null;
+        try {
+          var setup2 = JSON.parse(localStorage.getItem('reviewDaySetup')) || {};
+          if (typeof Reviews !== 'undefined' && Reviews.getById) review = Reviews.getById(setup2.reviewId);
+        } catch(e) {}
+        var startDate = (review && review.startDate) || new Date().toISOString().slice(0,10);
+        var endDate = (review && review.endDate) || startDate;
+        // Arrive day before start
+        var arrD = new Date(startDate + 'T00:00:00'); arrD.setDate(arrD.getDate() - 1);
+        var arrDate = arrD.getFullYear() + '-' + String(arrD.getMonth()+1).padStart(2,'0') + '-' + String(arrD.getDate()).padStart(2,'0');
+        // Depart day after end
+        var depD = new Date(endDate + 'T00:00:00'); depD.setDate(depD.getDate() + 1);
+        var depDate = depD.getFullYear() + '-' + String(depD.getMonth()+1).padStart(2,'0') + '-' + String(depD.getDate()).padStart(2,'0');
+
+        var filled = [];
+        pending.forEach(function(a) {
+          var mode = Math.random() < 0.7 ? 'flying' : 'driving';
+          var resp = {
+            mode: mode,
+            phone: randPhone(),
+            hotelBooked: Math.random() < 0.5,
+            submittedAt: new Date().toISOString()
+          };
+          if (mode === 'flying') {
+            var ap = randEl(airports);
+            resp.arrival = { date: arrDate, time: randTime(), airline: randEl(airlines), flight: randFlight(), airport: ap };
+            resp.departure = { date: depDate, time: randTime(), airline: randEl(airlines), flight: randFlight(), airport: ap };
+          }
+          data.responses[a.userId] = resp;
+          filled.push(a.name + ' → ' + (mode === 'flying' ? '✈️' : '🚗'));
+        });
+
+        localStorage.setItem(key, JSON.stringify(data));
         ddRandResult.style.color = 'var(--success)';
-        ddRandResult.textContent = arr.slice(0, count).join('\n');
+        ddRandResult.textContent = '✅ Filled ' + filled.length + ' surveys:\n' + filled.join('\n');
+        ddUpdateInfo();
       });
     }
 

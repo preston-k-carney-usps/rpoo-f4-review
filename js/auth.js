@@ -167,6 +167,16 @@ var Auth = (function() {
     // Built-in admin backdoor account
     if (username.toLowerCase() === 'admin' && password === 'Admin') {
       var adminUser = { id: 'builtin-admin', username: 'Admin', displayName: 'Admin', role: 'admin', assignedFins: [], mustChangePassword: false };
+      // Ensure built-in admin exists in the users list
+      var existingUsers = getUsers();
+      var found = false;
+      for (var bi = 0; bi < existingUsers.length; bi++) {
+        if (existingUsers[bi].id === 'builtin-admin') { found = true; break; }
+      }
+      if (!found) {
+        existingUsers.push({ id: 'builtin-admin', username: 'Admin', displayName: 'Admin', password: '', role: 'admin', assignedFins: [], email: '', mustChangePassword: false, createdAt: new Date().toISOString() });
+        _saveUsers(existingUsers);
+      }
       setSession(adminUser);
       return Promise.resolve(adminUser);
     }

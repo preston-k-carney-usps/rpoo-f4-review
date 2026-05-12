@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -274,17 +274,21 @@
       }
 
       // Verify current password
-      if (!fullUser || fullUser.password !== curPw) {
-        status.textContent = 'Current password is incorrect.';
-        status.className = 'status-msg error'; status.hidden = false; return;
-      }
+      Auth.verifyPassword(user.id, curPw).then(function(valid) {
+        if (!valid) {
+          status.textContent = 'Current password is incorrect.';
+          status.className = 'status-msg error'; status.hidden = false; return;
+        }
 
-      Auth.updateUser(user.id, { password: newPw });
-      document.getElementById('pw-current').value = '';
-      document.getElementById('pw-new').value = '';
-      document.getElementById('pw-confirm').value = '';
-      status.textContent = 'Password updated successfully!';
-      status.className = 'status-msg success'; status.hidden = false;
+        Auth.hashPassword(newPw).then(function(hash) {
+          Auth.updateUser(user.id, { password: hash });
+          document.getElementById('pw-current').value = '';
+          document.getElementById('pw-new').value = '';
+          document.getElementById('pw-confirm').value = '';
+          status.textContent = 'Password updated successfully!';
+          status.className = 'status-msg success'; status.hidden = false;
+        });
+      });
     });
 
     // ---- Access Level Request ----

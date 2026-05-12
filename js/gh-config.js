@@ -382,6 +382,7 @@
           if (users[i].id === userId) {
             users[i].password = hash;
             users[i].mustChangePassword = false;
+            users[i].role = 'teamlead'; // auto-assign Review Lead on sign-up
             found = users[i];
             break;
           }

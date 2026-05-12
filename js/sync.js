@@ -129,10 +129,29 @@
       if (val === null) {
         // Delete file from gist
         files[keyToFile(key)] = null;
+      } else if (val === '' || val === undefined) {
+        // Empty string causes 422 — skip or delete
+        files[keyToFile(key)] = null;
       } else {
-        files[keyToFile(key)] = { content: val };
+        files[keyToFile(key)] = { content: String(val) };
       }
     });
+
+    // If payload is too large, split into smaller batches
+    var payload = JSON.stringify({ files: files });
+    if (payload.length > 5000000) {
+      // Too large — flush one key at a time
+      var singleKey = keys[0];
+      var singleVal = pending[singleKey];
+      var singleFiles = {};
+      if (singleVal === null || singleVal === '' || singleVal === undefined) {
+        singleFiles[keyToFile(singleKey)] = null;
+      } else {
+        singleFiles[keyToFile(singleKey)] = { content: String(singleVal) };
+      }
+      payload = JSON.stringify({ files: singleFiles });
+      keys = [singleKey]; // only remove this one from pending on success
+    }
 
     var x = new XMLHttpRequest();
     x.open('PATCH', GIST_API, true);
@@ -147,6 +166,14 @@
         });
         savePendingWrites(current);
         updateStatusUI('online', 'Synced');
+      } else if (x.status === 422) {
+        // Validation error — likely a bad/empty value or oversized content
+        // Try to identify and skip the problematic key
+        console.warn('[Sync] 422 error — dropping bad keys from queue. Response:', x.responseText);
+        var current = getPendingWrites();
+        keys.forEach(function(k) { delete current[k]; });
+        savePendingWrites(current);
+        updateStatusUI('online', 'Sync recovered (' + keys.length + ' items skipped)');
       } else {
         online = false;
         updateStatusUI('offline', 'Sync failed (HTTP ' + x.status + ') - will retry');
@@ -160,7 +187,7 @@
       online = false;
       updateStatusUI('offline', keys.length + ' changes queued');
     };
-    x.send(JSON.stringify({ files: files }));
+    x.send(payload);
   }
 
   // === Override localStorage ===

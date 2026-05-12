@@ -318,13 +318,15 @@ var Auth = (function() {
     var nav = document.querySelector('.nav-links');
     if (!nav) return;
 
-    // Add admin link for admins & teamleads
+    // Add admin link for admins & teamleads — insert before Table of Contents
     if (user.role === 'admin' || user.role === 'teamlead') {
       var adminLink = document.createElement('a');
       adminLink.href = 'admin.html';
       adminLink.textContent = 'Manage Reviews';
       if (window.location.pathname.indexOf('admin') >= 0) adminLink.className = 'active';
-      nav.appendChild(adminLink);
+      var tocLink = nav.querySelector('a[href="help.html"]');
+      if (tocLink) { nav.insertBefore(adminLink, tocLink); }
+      else { nav.appendChild(adminLink); }
     }
 
     // Settings link
@@ -522,7 +524,9 @@ var Auth = (function() {
       }
       var btn = document.createElement('button');
       btn.className = 'debug-drawer-user' + (u.id === session.id ? ' debug-drawer-user--active' : '');
-      btn.textContent = u.displayName || u.username;
+      var signedUp = !u.mustChangePassword;
+      btn.textContent = (signedUp ? '✅ ' : '') + (u.displayName || u.username);
+      if (signedUp) btn.title = 'Has signed up';
       btn.addEventListener('click', function() {
         setSession(u);
         window.location.reload();

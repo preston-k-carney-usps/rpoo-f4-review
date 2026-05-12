@@ -2048,11 +2048,6 @@
       var q = assignSearchInput.value.trim().toLowerCase();
       _assignSelectedUserId = '';
       _assignSelectedName = '';
-      if (q.length < 2) {
-        assignSearchResults.hidden = true;
-        if (assignCreateWrap) assignCreateWrap.hidden = true;
-        return;
-      }
       var users = Auth.getUsers();
       var assigned = getAssignedSet();
       var busy = getBusyReviewers();
@@ -2060,13 +2055,14 @@
       var matches = users.filter(function(u) {
         if (reviewLeaderIds[u.id]) return false; // exclude leads/teamleads
         if (assigned.byId[u.id]) return false;   // exclude already assigned
-        var name = u.displayName.toLowerCase();
+        var name = (u.displayName || '').toLowerCase();
         var email = (u.email || '').toLowerCase();
-        // Every word in the query must appear in the name or email
+        // If no query, show all available; otherwise filter by every word
+        if (qWords.length === 0) return true;
         return qWords.every(function(w) {
           return name.indexOf(w) !== -1 || email.indexOf(w) !== -1;
         });
-      }).slice(0, 15);
+      }).slice(0, 20);
 
       var html = '';
       if (matches.length === 0) {
@@ -2114,6 +2110,7 @@
     }
 
     assignSearchInput.addEventListener('input', runAssignSearch);
+    assignSearchInput.addEventListener('focus', runAssignSearch);
     window._wbAssignSearch = runAssignSearch;
 
     // Keyboard: Enter selects the first result, Escape closes dropdown

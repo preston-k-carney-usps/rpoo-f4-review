@@ -195,10 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var obsInfoSection = document.getElementById('obs-info-section');
     if (obsInfoSection && !isLeadNotesMode) obsInfoSection.hidden = true;
 
-    // Hide POD-only elements for leads
-    var _podDayToggle = document.getElementById('pod-day-toggle');
+    // Hide POD phase bar for leads (day toggle stays visible)
     var _podPhaseBar = document.getElementById('pod-phase-bar');
-    if (_podDayToggle) _podDayToggle.hidden = true;
     if (_podPhaseBar) _podPhaseBar.hidden = true;
 
     // Show the title bar with review name (no date) + office buttons inline
@@ -304,11 +302,31 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.wb-phase-tabs').forEach(function(el) {
         el.style.display = (activePhase && el.dataset.phase === activePhase.dataset.phase) ? '' : 'none';
       });
-      // Hide obs info bar, day toggle, and POD phase bar in manage mode
+      // Hide obs info bar and POD phase bar in manage mode (but keep day toggle visible)
       var obsInfoSection = document.getElementById('obs-info-section');
       if (obsInfoSection) obsInfoSection.hidden = true;
       var dayToggle = document.getElementById('pod-day-toggle');
-      if (dayToggle) dayToggle.hidden = true;
+      if (dayToggle) {
+        dayToggle.hidden = false;
+        var wbDayBtns = dayToggle.querySelectorAll('.pod-day-btn');
+        var currentDay = setup.dayNumber || '1';
+        wbDayBtns.forEach(function(b) {
+          b.classList.toggle('wb-lead-toggle--active', b.dataset.day === currentDay);
+        });
+        wbDayBtns.forEach(function(btn) {
+          btn.onclick = function() {
+            var newDay = btn.dataset.day;
+            wbDayBtns.forEach(function(b) { b.classList.remove('wb-lead-toggle--active'); });
+            btn.classList.add('wb-lead-toggle--active');
+            setup.dayNumber = newDay;
+            if (dayNumInput) dayNumInput.value = newDay;
+            localStorage.setItem('reviewDaySetup', JSON.stringify(setup));
+            var params = new URLSearchParams(window.location.search);
+            params.set('day', newDay);
+            window.location.href = 'review.html?' + params.toString();
+          };
+        });
+      }
       // Update toggle
       var manageBtn = document.getElementById('wb-mode-manage');
       var notesBtn = document.getElementById('wb-mode-notes');

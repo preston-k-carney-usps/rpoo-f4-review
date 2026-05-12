@@ -359,84 +359,47 @@
     // Import from schedule's assignedNames — scan ALL offices in the review
     if (importBtn) {
       importBtn.addEventListener('click', function() {
-        // Get all offices for this review
         var review = (typeof Reviews !== 'undefined' && Reviews.getById) ? Reviews.getById(reviewId) : null;
         var offices = (review && review.offices) ? review.offices : [];
         if (offices.length === 0 && financeNum) offices = [{ financeNum: financeNum, officeName: 'Current Office' }];
 
-        // Collect schedule keys for all offices, track source
-        var sources = []; // { key, officeName, names[] }
-        offices.forEach(function(o) {
-          sources.push({ key: 'clerk_obs_schedule_' + reviewId + '_' + o.financeNum, officeName: o.officeName || o.financeNum });
-        });
-
-        // Gather all unique assignedNames across all offices
-        var allSchedNames = [];
-        var seenIds = {};
-        var sourceReport = [];
-        sources.forEach(function(src) {
-          try {
-            var schedData = JSON.parse(localStorage.getItem(src.key)) || {};
-            var names = schedData.assignedNames || [];
-            var newFromThis = 0;
-            names.forEach(function(sn) {
-              if (sn.userId && !seenIds[sn.userId]) {
-                allSchedNames.push(sn);
-                seenIds[sn.userId] = true;
-                newFromThis++;
-              }
-            });
-            if (names.length > 0) {
-              sourceReport.push(src.officeName + ': ' + names.length + ' reviewer' + (names.length !== 1 ? 's' : '') + ' (' + newFromThis + ' new)');
-            }
-          } catch(e) {}
-        });
-
-        // Also include review leaders (lead + teamlead) as travelers
-        var leaderCount = 0;
-        if (review && review.assignments) {
-          review.assignments.forEach(function(a) {
-            if ((a.reviewRole === 'lead' || a.reviewRole === 'teamlead') && a.userId && !seenIds[a.userId]) {
-              var u = (typeof Auth !== 'undefined' && Auth.getUserById) ? Auth.getUserById(a.userId) : null;
-              var name = u ? (u.displayName || u.username) : ('Leader ' + a.userId);
-              allSchedNames.push({ name: name, userId: a.userId });
-              seenIds[a.userId] = true;
-              leaderCount++;
-            }
-          });
-          if (leaderCount > 0) {
-            sourceReport.push('Review Leaders: ' + leaderCount);
-          }
-        }
-
-        if (allSchedNames.length === 0) {
-          alert('No reviewers found in any office schedule. Build schedules and assign names first.');
-          return;
-        }
-
-        // Filter out already-assigned
         var data = loadData();
         var existingIds = {};
         data.assignments.forEach(function(a) { existingIds[a.userId] = true; });
-        var toAdd = allSchedNames.filter(function(sn) { return !existingIds[sn.userId]; });
 
-        if (toAdd.length === 0) {
-          alert('All schedule names are already assigned.');
+        var added = 0;
+
+        // Add all assigned reviewers from all office schedules
+        offices.forEach(function(o) {
+          try {
+            var schedData = JSON.parse(localStorage.getItem('clerk_obs_schedule_' + reviewId + '_' + o.financeNum)) || {};
+            (schedData.assignedNames || []).forEach(function(sn) {
+              if (sn.userId && !existingIds[sn.userId]) {
+                data.assignments.push({ name: sn.name || sn.userName, userId: sn.userId });
+                existingIds[sn.userId] = true;
+                added++;
+              }
+            });
+          } catch(e) {}
+        });
+
+        // Add review leaders (lead + teamlead)
+        if (review && review.assignments) {
+          review.assignments.forEach(function(a) {
+            if ((a.reviewRole === 'lead' || a.reviewRole === 'teamlead') && a.userId && !existingIds[a.userId]) {
+              var u = (typeof Auth !== 'undefined' && Auth.getUserById) ? Auth.getUserById(a.userId) : null;
+              data.assignments.push({ name: u ? (u.displayName || u.username) : a.userId, userId: a.userId });
+              existingIds[a.userId] = true;
+              added++;
+            }
+          });
+        }
+
+        if (added === 0 && data.assignments.length === 0) {
+          alert('No review team found. Assign reviewers on the "Assign Review Team" tab first.');
           return;
         }
 
-        // Confirm with source breakdown
-        var msg = 'Found ' + allSchedNames.length + ' unique reviewer' + (allSchedNames.length !== 1 ? 's' : '') + ' across ' + sourceReport.length + ' office' + (sourceReport.length !== 1 ? 's' : '') + ':\n\n';
-        msg += sourceReport.join('\n');
-        msg += '\n\n' + toAdd.length + ' new name' + (toAdd.length !== 1 ? 's' : '') + ' to add:\n';
-        msg += toAdd.map(function(sn) { return '  • ' + (sn.name || sn.userName); }).join('\n');
-        msg += '\n\nImport these travelers?';
-
-        if (!confirm(msg)) return;
-
-        toAdd.forEach(function(sn) {
-          data.assignments.push({ name: sn.name || sn.userName, userId: sn.userId });
-        });
         saveData(data);
         renderAssignedList();
         renderRollup();

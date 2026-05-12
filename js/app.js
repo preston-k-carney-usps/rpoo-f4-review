@@ -198,8 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide POD-only elements for leads
     var _podDayToggle = document.getElementById('pod-day-toggle');
     var _podPhaseBar = document.getElementById('pod-phase-bar');
-    if (_podDayToggle) _podDayToggle.hidden = true;
-    if (_podPhaseBar) _podPhaseBar.hidden = true;
+    if (_podDayToggle) _podDayToggle.style.display = 'none';
+    if (_podPhaseBar) _podPhaseBar.style.display = 'none';
 
     // Show the title bar with review name (no date) + office buttons inline
     var wbModeBar = document.getElementById('wb-mode-bar');
@@ -295,17 +295,20 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.review-tab-panel').forEach(function(p) { p.classList.remove('active'); });
       // Show workbook panel (no tab button needed)
       if (wbPanel) wbPanel.classList.add('active');
-      // Show phase bar + active phase sub-tabs
-      document.querySelectorAll('.wb-phase-bar').forEach(function(el) { el.style.display = ''; });
+      // Show WORKBOOK phase bar only (not POD phase bar)
+      document.querySelectorAll('.wb-phase-bar').forEach(function(el) {
+        if (el.id === 'pod-phase-bar') { el.style.display = 'none'; }
+        else { el.style.display = ''; }
+      });
       var activePhase = document.querySelector('.wb-phase-btn--active');
       document.querySelectorAll('.wb-phase-tabs').forEach(function(el) {
         el.style.display = (activePhase && el.dataset.phase === activePhase.dataset.phase) ? '' : 'none';
       });
-      // Hide obs info bar and day toggle in manage mode
+      // Hide obs info bar, day toggle, and POD phase bar in manage mode
       var obsInfoSection = document.getElementById('obs-info-section');
       if (obsInfoSection) obsInfoSection.hidden = true;
       var dayToggle = document.getElementById('pod-day-toggle');
-      if (dayToggle) dayToggle.hidden = true;
+      if (dayToggle) dayToggle.style.display = 'none';
       // Update toggle
       var manageBtn = document.getElementById('wb-mode-manage');
       var notesBtn = document.getElementById('wb-mode-notes');
@@ -344,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Show Day 1 / Day 2 toggle for lead notes mode
       var leadDayToggle = document.getElementById('pod-day-toggle');
       if (leadDayToggle) {
-        leadDayToggle.hidden = false;
+        leadDayToggle.style.display = '';
         var leadDayBtns = leadDayToggle.querySelectorAll('.pod-day-btn');
         var currentDay = setup.dayNumber || '1';
         leadDayBtns.forEach(function(b) {

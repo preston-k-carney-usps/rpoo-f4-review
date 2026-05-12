@@ -1,15 +1,17 @@
 /**
- * sync.js - Offline-first localStorage sync
+ * sync.js - Offline-first localStorage sync via GitHub Gist
  *
  * How it works:
  * - All data lives in localStorage FIRST (instant, always available)
- * - When server is reachable, changes sync in background
- * - When server is down (computer off), app keeps working
+ * - When online, changes sync to a shared GitHub Gist
+ * - When offline, app keeps working from localStorage
  * - Pending writes are persisted and flush when connection returns
- * - Service Worker caches the app itself for offline loading
  *
  * LOCAL-ONLY keys (per device, never synced):
  *   clerk_obs_session, clerk_obs_dark, clerk_obs_prefs, reviewDaySetup
+ *
+ * Requires gh-config.js loaded BEFORE this script:
+ *   window.GH_CONFIG = { gistId: '...', token: '...' }
  */
 (function() {
   'use strict';
@@ -17,14 +19,17 @@
   // === Skip entirely in file:// mode ===
   if (window.location.protocol === 'file:') return;
 
-  // === Register Service Worker ===
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(function(e) {
-      console.warn('[SW] Registration failed:', e);
-    });
-  }
+  // === GitHub Gist configuration ===
+  var cfg = window.GH_CONFIG || {};
+  var GIST_ID = cfg.gistId || '';
+  var TOKEN = cfg.token || '';
+  var GIST_API = 'https://api.github.com/gists/' + GIST_ID;
 
-  var API = '/api/store';
+  // If no config, run in local-only mode (no sync)
+  var SYNC_ENABLED = !!(GIST_ID && TOKEN);
+  if (!SYNC_ENABLED) {
+    console.warn('[Sync] No GitHub config found. Running in local-only mode.');
+  }
 
   // === Local-only keys ===
   var LOCAL_KEYS = {
@@ -33,7 +38,9 @@
     clerk_obs_prefs: true,
     reviewDaySetup: true,
     _sync_pending: true,
-    _sync_status: true
+    _sync_status: true,
+    _gh_gist_id: true,
+    _gh_token: true
   };
 
   function isShared(key) {
@@ -41,6 +48,12 @@
     if (key.indexOf('clerk_obs_') === 0) return true;
     if (key === 'timeTracker_observations') return true;
     return false;
+  }
+
+  // Sanitize localStorage key to valid gist filename
+  function keyToFile(key) { return key + '.json'; }
+  function fileToKey(filename) {
+    return filename.replace(/\.json$/, '');
   }
 
   // === Original localStorage methods ===
@@ -54,18 +67,19 @@
   var syncInProgress = false;
 
   function checkConnection(callback) {
+    if (!SYNC_ENABLED) { if (callback) callback(false); return; }
+    // Lightweight check - hit GitHub API root
     var x = new XMLHttpRequest();
-    x.open('HEAD', API, true);
-    x.timeout = 3000;
-    x.onload = function() { online = true; if (callback) callback(true); };
+    x.open('GET', 'https://api.github.com/rate_limit', true);
+    x.setRequestHeader('Authorization', 'token ' + TOKEN);
+    x.timeout = 5000;
+    x.onload = function() { online = (x.status === 200); if (callback) callback(online); };
     x.onerror = function() { online = false; if (callback) callback(false); };
     x.ontimeout = function() { online = false; if (callback) callback(false); };
     x.send();
   }
 
   // === Persistent write queue ===
-  // Writes are stored in localStorage under _sync_pending so they survive
-  // page refreshes, browser closes, and device restarts.
   function getPendingWrites() {
     try {
       var raw = _get('_sync_pending');
@@ -78,15 +92,16 @@
   }
 
   function queueWrite(key, value) {
+    if (!SYNC_ENABLED) return;
     var pending = getPendingWrites();
     pending[key] = value; // null means delete
     savePendingWrites(pending);
     scheduleFlush();
   }
 
-  // === Flush pending writes to server ===
+  // === Flush pending writes to Gist ===
   var flushTimer = null;
-  var FLUSH_DELAY = 500; // ms debounce
+  var FLUSH_DELAY = 500;
 
   function scheduleFlush() {
     if (flushTimer) clearTimeout(flushTimer);
@@ -95,6 +110,7 @@
 
   function flushPending() {
     flushTimer = null;
+    if (!SYNC_ENABLED) return;
     var pending = getPendingWrites();
     var keys = Object.keys(pending);
     if (keys.length === 0) return;
@@ -106,29 +122,45 @@
 
     updateStatusUI('syncing', 'Syncing ' + keys.length + ' changes...');
 
+    // Build gist PATCH payload
+    var files = {};
+    keys.forEach(function(key) {
+      var val = pending[key];
+      if (val === null) {
+        // Delete file from gist
+        files[keyToFile(key)] = null;
+      } else {
+        files[keyToFile(key)] = { content: val };
+      }
+    });
+
     var x = new XMLHttpRequest();
-    x.open('POST', API + '/bulk', true);
+    x.open('PATCH', GIST_API, true);
+    x.setRequestHeader('Authorization', 'token ' + TOKEN);
     x.setRequestHeader('Content-Type', 'application/json');
+    x.timeout = 15000;
     x.onload = function() {
       if (x.status === 200) {
-        // Remove flushed keys from pending queue
         var current = getPendingWrites();
         keys.forEach(function(k) {
-          // Only remove if the value hasn't changed since we sent it
           if (current[k] === pending[k]) delete current[k];
         });
         savePendingWrites(current);
         updateStatusUI('online', 'Synced');
       } else {
         online = false;
-        updateStatusUI('offline', 'Sync failed - will retry');
+        updateStatusUI('offline', 'Sync failed (HTTP ' + x.status + ') - will retry');
       }
     };
     x.onerror = function() {
       online = false;
       updateStatusUI('offline', keys.length + ' changes queued');
     };
-    x.send(JSON.stringify(pending));
+    x.ontimeout = function() {
+      online = false;
+      updateStatusUI('offline', keys.length + ' changes queued');
+    };
+    x.send(JSON.stringify({ files: files }));
   }
 
   // === Override localStorage ===
@@ -148,33 +180,32 @@
 
   localStorage.clear = function() {
     _clr();
-    if (online) {
-      try { var x = new XMLHttpRequest(); x.open('POST', API + '/clear', true); x.send(); } catch(e) {}
-    }
+    // Note: gist data remains as backup; next device will pull it
   };
 
-  // === Pull from server ===
-  function pullFromServer(callback) {
-    if (syncInProgress) return;
+  // === Pull from Gist ===
+  function pullFromGist(callback) {
+    if (!SYNC_ENABLED || syncInProgress) { if (callback) callback(false); return; }
     syncInProgress = true;
 
     var x = new XMLHttpRequest();
-    x.open('GET', API, true);
-    x.timeout = 8000;
+    x.open('GET', GIST_API, true);
+    x.setRequestHeader('Authorization', 'token ' + TOKEN);
+    x.timeout = 10000;
     x.onload = function() {
       syncInProgress = false;
       if (x.status === 200) {
         online = true;
         try {
-          var store = JSON.parse(x.responseText);
-          var keys = Object.keys(store);
+          var gist = JSON.parse(x.responseText);
+          var files = gist.files || {};
           var pending = getPendingWrites();
 
-          keys.forEach(function(key) {
+          Object.keys(files).forEach(function(filename) {
+            var key = fileToKey(filename);
+            if (key === '_init') return; // skip init file
             if (isShared(key) && !pending[key]) {
-              // Only update if we don't have a pending write for this key
-              var val = store[key];
-              if (typeof val !== 'string') val = JSON.stringify(val);
+              var val = files[filename].content;
               var current = _get(key);
               if (current !== val) {
                 _set(key, val);
@@ -182,16 +213,19 @@
             }
           });
           updateStatusUI('online', 'Synced');
-        } catch(e) {}
+        } catch(e) {
+          console.error('[Sync] Parse error:', e);
+        }
         if (callback) callback(true);
       } else {
+        online = false;
         if (callback) callback(false);
       }
     };
     x.onerror = function() {
       syncInProgress = false;
       online = false;
-      updateStatusUI('offline', getPendingCount() > 0 ? getPendingCount() + ' changes queued' : 'Server unavailable');
+      updateStatusUI('offline', getPendingCount() > 0 ? getPendingCount() + ' changes queued' : 'Cannot reach GitHub');
       if (callback) callback(false);
     };
     x.ontimeout = function() {
@@ -206,35 +240,43 @@
     return Object.keys(getPendingWrites()).length;
   }
 
-  // === Initial sync (non-blocking) ===
+  // === Initial sync ===
   function initialSync() {
+    if (!SYNC_ENABLED) {
+      hideOverlay();
+      return;
+    }
+
     var x = new XMLHttpRequest();
-    x.open('GET', API, true);
-    x.timeout = 5000;
+    x.open('GET', GIST_API, true);
+    x.setRequestHeader('Authorization', 'token ' + TOKEN);
+    x.timeout = 8000;
     x.onload = function() {
       if (x.status === 200) {
         online = true;
         try {
-          var store = JSON.parse(x.responseText);
-          var keys = Object.keys(store);
+          var gist = JSON.parse(x.responseText);
+          var files = gist.files || {};
+          var fileKeys = Object.keys(files).filter(function(f) { return f !== '_init.json'; });
           var pending = getPendingWrites();
 
-          if (keys.length === 0 && getPendingCount() === 0) {
-            // Server empty + no pending = seed server with local data
-            seedServer();
+          if (fileKeys.length === 0 && getPendingCount() === 0) {
+            // Gist empty + no pending = seed gist with local data
+            seedGist();
           } else {
-            // Pull server data (skip keys with pending local writes)
-            keys.forEach(function(key) {
+            // Pull gist data (skip keys with pending local writes)
+            fileKeys.forEach(function(filename) {
+              var key = fileToKey(filename);
               if (isShared(key) && !pending[key]) {
-                var val = store[key];
-                if (typeof val !== 'string') val = JSON.stringify(val);
+                var val = files[filename].content;
                 _set(key, val);
               }
             });
           }
-        } catch(e) {}
+        } catch(e) {
+          console.error('[Sync] Initial parse error:', e);
+        }
 
-        // Flush any pending writes
         if (getPendingCount() > 0) flushPending();
         updateStatusUI('online', 'Synced');
       }
@@ -253,40 +295,42 @@
     x.send();
   }
 
-  function seedServer() {
-    var batch = {};
+  function seedGist() {
+    var files = {};
     var found = false;
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i);
-      if (isShared(key)) { batch[key] = _get(key); found = true; }
+      if (isShared(key)) {
+        files[keyToFile(key)] = { content: _get(key) };
+        found = true;
+      }
     }
     if (!found) return;
     try {
       var x = new XMLHttpRequest();
-      x.open('POST', API + '/bulk', true);
+      x.open('PATCH', GIST_API, true);
+      x.setRequestHeader('Authorization', 'token ' + TOKEN);
       x.setRequestHeader('Content-Type', 'application/json');
-      x.send(JSON.stringify(batch));
+      x.send(JSON.stringify({ files: files }));
     } catch(e) {}
   }
 
   // === Background sync loop ===
-  var SYNC_INTERVAL = 8000;
+  var SYNC_INTERVAL = 10000; // 10 seconds (be kind to GitHub API limits)
 
   function backgroundSync() {
-    // First try to flush pending writes
+    if (!SYNC_ENABLED) return;
     var pending = getPendingWrites();
     if (Object.keys(pending).length > 0) {
       flushPending();
     }
-    // Then pull latest from server
-    pullFromServer();
+    pullFromGist();
   }
 
   // === Reconnection detection ===
-  // If we go offline, check more frequently for reconnection
   var reconnectTimer = null;
   function startReconnectLoop() {
-    if (reconnectTimer) return;
+    if (reconnectTimer || !SYNC_ENABLED) return;
     reconnectTimer = setInterval(function() {
       if (online) {
         clearInterval(reconnectTimer);
@@ -297,13 +341,12 @@
         if (isOnline) {
           clearInterval(reconnectTimer);
           reconnectTimer = null;
-          // Reconnected! Flush pending and pull
           updateStatusUI('syncing', 'Reconnected - syncing...');
           flushPending();
-          setTimeout(function() { pullFromServer(); }, 1000);
+          setTimeout(function() { pullFromGist(); }, 1000);
         }
       });
-    }, 5000); // Check every 5 seconds when offline
+    }, 5000);
   }
 
   // === Status UI ===
@@ -338,7 +381,6 @@
       bar.style.background = '#065f46';
       bar.style.color = '#d1fae5';
       dot.style.background = '#34d399';
-      // Auto-hide after 3 seconds when synced
       bar.style.transform = 'translateY(0)';
       setTimeout(function() {
         if (online && getPendingCount() === 0) bar.style.transform = 'translateY(100%)';
@@ -381,7 +423,6 @@
   }
 
   // === Boot sequence ===
-  // DOM ready - create status bar, start sync
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {
@@ -391,19 +432,27 @@
   function boot() {
     createStatusUI();
     initialSync();
-    setInterval(backgroundSync, SYNC_INTERVAL);
+    if (SYNC_ENABLED) {
+      setInterval(backgroundSync, SYNC_INTERVAL);
+    }
   }
 
   // Flush on page unload
   window.addEventListener('beforeunload', function() {
+    if (!SYNC_ENABLED) return;
     var pending = getPendingWrites();
     if (Object.keys(pending).length > 0) {
-      // Synchronous flush attempt
       try {
         var x = new XMLHttpRequest();
-        x.open('POST', API + '/bulk', false);
+        x.open('PATCH', GIST_API, false); // synchronous
+        x.setRequestHeader('Authorization', 'token ' + TOKEN);
         x.setRequestHeader('Content-Type', 'application/json');
-        x.send(JSON.stringify(pending));
+        var files = {};
+        Object.keys(pending).forEach(function(key) {
+          var val = pending[key];
+          files[keyToFile(key)] = val === null ? null : { content: val };
+        });
+        x.send(JSON.stringify({ files: files }));
         if (x.status === 200) savePendingWrites({});
       } catch(e) {
         // Pending writes stay in localStorage - will sync next time
@@ -413,11 +462,12 @@
 
   // Network status events
   window.addEventListener('online', function() {
+    if (!SYNC_ENABLED) return;
     checkConnection(function(isOnline) {
       if (isOnline) {
         updateStatusUI('syncing', 'Reconnected - syncing...');
         flushPending();
-        setTimeout(pullFromServer, 500);
+        setTimeout(pullFromGist, 500);
       }
     });
   });
@@ -433,7 +483,7 @@
     pendingCount: getPendingCount,
     forceSync: backgroundSync,
     forcePush: flushPending,
-    forcePull: pullFromServer,
+    forcePull: pullFromGist,
     flushWrites: flushPending
   };
 })();

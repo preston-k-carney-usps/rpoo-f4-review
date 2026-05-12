@@ -56,13 +56,85 @@
       </div>
       <p id="pw-error" class="status-msg error" hidden></p>
     </section>
+
+    <!-- First-Run Admin Setup (hidden) -->
+    <section class="card login-card" id="first-run-form" hidden>
+      <h2>First-Time Setup</h2>
+      <p class="setup-subtitle">Create your admin account to get started.</p>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="setup-name">Your Name</label>
+          <input type="text" id="setup-name" placeholder="e.g. Carney, Preston K" autofocus>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="setup-pass">Password</label>
+          <input type="password" id="setup-pass" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="setup-pass2">Confirm Password</label>
+          <input type="password" id="setup-pass2" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="setup-actions">
+        <button id="setup-btn" class="btn btn-primary btn-lg">Create Admin Account</button>
+      </div>
+      <p id="setup-error" class="status-msg error" hidden></p>
+    </section>
   </main>
 
+  <script src="js/gh-config.js"></script>
   <script src="js/sync.js"></script>
   <script src="js/auth.js"></script>
   <script>
     (function() {
       Auth.bootstrap();
+
+      // First-run: no users exist yet
+      var allUsers = Auth.getUsers();
+      if (allUsers.length === 0) {
+        document.getElementById('login-form').hidden = true;
+        var frForm = document.getElementById('first-run-form');
+        frForm.hidden = false;
+        var nameIn = document.getElementById('setup-name');
+        var passIn = document.getElementById('setup-pass');
+        var pass2In = document.getElementById('setup-pass2');
+        var setupBtn = document.getElementById('setup-btn');
+        var setupErr = document.getElementById('setup-error');
+
+        function doSetup() {
+          setupErr.hidden = true;
+          var n = nameIn.value.trim();
+          var p = passIn.value;
+          var p2 = pass2In.value;
+          if (!n) { setupErr.textContent = 'Please enter your name.'; setupErr.hidden = false; return; }
+          if (!p || p.length < 4) { setupErr.textContent = 'Password must be at least 4 characters.'; setupErr.hidden = false; return; }
+          if (p !== p2) { setupErr.textContent = 'Passwords do not match.'; setupErr.hidden = false; return; }
+          var user = {
+            id: crypto.randomUUID(),
+            username: n,
+            password: p,
+            displayName: n,
+            role: 'admin',
+            assignedFins: [],
+            mustChangePassword: false,
+            createdAt: new Date().toISOString()
+          };
+          var users = [user];
+          localStorage.setItem('clerk_obs_users', JSON.stringify(users));
+          Auth.login(n, p);
+          window.location.href = 'index.html';
+        }
+
+        setupBtn.addEventListener('click', doSetup);
+        pass2In.addEventListener('keydown', function(e) { if (e.key === 'Enter') doSetup(); });
+        nameIn.focus();
+        return;
+      }
+
       var session = Auth.currentUser();
       if (session && !session.mustChangePassword) {
         window.location.href = 'index.html';

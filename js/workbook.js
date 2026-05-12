@@ -161,7 +161,7 @@
     refreshBtn.addEventListener('click', loadReviewerStatus);
   }
 
-  // ---------- My Notes (Lead Day 1 / Day 2) ----------
+  // ---------- Review Notes (Lead Day 1 / Day 2) ----------
 
   var myNotesOfficeEl = document.getElementById('wb-mynotes-office');
   var myNotesStatusEl = document.getElementById('wb-mynotes-status');

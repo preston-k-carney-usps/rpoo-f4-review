@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -130,6 +130,7 @@
       <button class="review-tab" data-tab="tab-questionnaire">Questionnaire</button>
       <button class="review-tab" data-tab="tab-summary-comments">Summarization</button>
       <button class="review-tab" data-tab="tab-travel-survey" hidden>Travel Survey</button>
+      <button class="review-tab" data-tab="tab-documents" hidden>Documents</button>
       <button class="review-tab" data-tab="tab-schedules">Schedules</button>
       <button class="review-tab eod-tab" data-tab="tab-endofday">End of Day</button>
     </div>
@@ -434,7 +435,10 @@
           <!-- Clock Ring Analysis -->
           <section class="card" style="margin-top:1rem;">
             <div class="section-header"><h2>Clock Ring Analysis</h2></div>
-            <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:0.75rem;">Upload a <a href="https://blue.usps.gov/tacs/" target="_blank" rel="noopener" style="color:#2563eb;font-weight:600;">TACS</a> clock ring CSV export to compare actual Begin Tour (BT) times against the scheduled start times. Deviations of <strong>±15 minutes</strong> or more are flagged. Note: File is not saved.</p>
+            <p style="font-size:0.82rem;color:var(--text-light);margin-bottom:0.5rem;">Upload a <a href="https://blue.usps.gov/tacs/" target="_blank" rel="noopener" style="color:#2563eb;font-weight:600;">TACS</a> clock ring CSV export to compare actual Begin Tour (BT) times against the scheduled start times. Deviations of <strong>±15 minutes</strong> or more are flagged. Note: File is not saved.</p>
+            <div style="padding:0.5rem 0.75rem;background:rgba(37,99,235,0.06);border:1px solid #93c5fd;border-radius:6px;margin-bottom:0.75rem;font-size:0.82rem;color:#1e40af;">
+              <strong>💡 Recommendation:</strong> Pull up to <strong>8 weeks</strong> of clock ring data for the most complete analysis. Any number of weeks can be used, but 8 weeks maximum is recommended for accuracy. Employees found in the clock ring data but <strong>not on the WebCOINS roster</strong> will be flagged — you will need to manually validate whether they are Function 4 employees working in the office.
+            </div>
             <input type="file" id="wb-clockring-csv" accept=".csv,.txt" style="font-size:0.85rem;">
             <div id="wb-clockring-output" style="margin-top:0.75rem;"></div>
           </section>
@@ -684,6 +688,11 @@
 
     <!-- TAB: Clerk Notes (main observation sheet) -->
     <div id="tab-clerk-notes" class="review-tab-panel active">
+      <!-- Clerk notes set switcher -->
+      <div id="clerk-sets-bar" style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+        <div id="clerk-set-tabs" style="display:flex;gap:0;border:1.5px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.78rem;"></div>
+        <button id="clerk-add-set-btn" class="btn btn-outline btn-sm" style="font-size:0.72rem;padding:0.2rem 0.5rem;" title="Add another clerk notes set">+ Add Set</button>
+      </div>
       <section class="card">
         <div class="section-header"><h2>Time Entries</h2></div>
         <div id="rows-container"></div>
@@ -1050,6 +1059,16 @@
             <span id="travel-hotel-update-status" style="margin-left:0.5rem;font-size:0.82rem;"></span>
           </div>
         </div>
+      </section>
+    </div>
+
+    <!-- TAB: Shared Documents (POD read-only view) -->
+    <div id="tab-documents" class="review-tab-panel">
+      <section class="card">
+        <div class="section-header"><h2>📄 Review Documents</h2></div>
+        <p class="setup-subtitle">Shared documents uploaded by the review lead for reference during the review.</p>
+        <div id="pod-docs-container"></div>
+        <div id="pod-docs-empty" class="empty-state">No documents have been uploaded for this review yet.</div>
       </section>
     </div>
 

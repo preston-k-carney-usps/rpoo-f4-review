@@ -2056,11 +2056,16 @@
       var users = Auth.getUsers();
       var assigned = getAssignedSet();
       var busy = getBusyReviewers();
+      var qWords = q.split(/\s+/).filter(function(w) { return w.length > 0; });
       var matches = users.filter(function(u) {
         if (reviewLeaderIds[u.id]) return false; // exclude leads/teamleads
         if (assigned.byId[u.id]) return false;   // exclude already assigned
-        return u.displayName.toLowerCase().indexOf(q) !== -1 ||
-               (u.email && u.email.toLowerCase().indexOf(q) !== -1);
+        var name = u.displayName.toLowerCase();
+        var email = (u.email || '').toLowerCase();
+        // Every word in the query must appear in the name or email
+        return qWords.every(function(w) {
+          return name.indexOf(w) !== -1 || email.indexOf(w) !== -1;
+        });
       }).slice(0, 15);
 
       var html = '';

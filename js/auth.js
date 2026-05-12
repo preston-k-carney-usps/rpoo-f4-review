@@ -430,6 +430,11 @@ var Auth = (function() {
     }
 
     // Role switch buttons
+    var rolesHdr = document.createElement('div');
+    rolesHdr.className = 'debug-drawer-role-hdr';
+    rolesHdr.textContent = 'Temp Role Switch';
+    panel.appendChild(rolesHdr);
+
     var roles = ['admin', 'teamlead', 'readonly', 'reviewer'];
     roles.forEach(function(r) {
       var btn = document.createElement('button');
@@ -437,6 +442,41 @@ var Auth = (function() {
       btn.textContent = ROLE_LABELS[r] || r;
       btn.addEventListener('click', function() {
         switchRole(r);
+      });
+      panel.appendChild(btn);
+    });
+
+    // User switch buttons
+    var userHdr = document.createElement('div');
+    userHdr.className = 'debug-drawer-role-hdr';
+    userHdr.style.marginTop = '0.5rem';
+    userHdr.textContent = 'Switch User';
+    panel.appendChild(userHdr);
+
+    var roleOrder = { admin: 0, teamlead: 1, readonly: 2, reviewer: 3 };
+    var sorted = users.slice().sort(function(a, b) {
+      var ra = roleOrder[a.role] !== undefined ? roleOrder[a.role] : 9;
+      var rb = roleOrder[b.role] !== undefined ? roleOrder[b.role] : 9;
+      if (ra !== rb) return ra - rb;
+      return (a.displayName || '').localeCompare(b.displayName || '');
+    });
+
+    var lastRole = '';
+    sorted.forEach(function(u) {
+      if (u.role !== lastRole) {
+        lastRole = u.role;
+        var hdr = document.createElement('div');
+        hdr.className = 'debug-drawer-role-hdr';
+        hdr.style.fontSize = '0.65rem';
+        hdr.textContent = ROLE_LABELS[u.role] || u.role;
+        panel.appendChild(hdr);
+      }
+      var btn = document.createElement('button');
+      btn.className = 'debug-drawer-user' + (u.id === session.id ? ' debug-drawer-user--active' : '');
+      btn.textContent = u.displayName || u.username;
+      btn.addEventListener('click', function() {
+        setSession(u);
+        window.location.reload();
       });
       panel.appendChild(btn);
     });

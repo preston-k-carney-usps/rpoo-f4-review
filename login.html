@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -113,20 +113,24 @@
           if (!n) { setupErr.textContent = 'Please enter your name.'; setupErr.hidden = false; return; }
           if (!p || p.length < 4) { setupErr.textContent = 'Password must be at least 4 characters.'; setupErr.hidden = false; return; }
           if (p !== p2) { setupErr.textContent = 'Passwords do not match.'; setupErr.hidden = false; return; }
-          var user = {
-            id: crypto.randomUUID(),
-            username: n,
-            password: p,
-            displayName: n,
-            role: 'admin',
-            assignedFins: [],
-            mustChangePassword: false,
-            createdAt: new Date().toISOString()
-          };
-          var users = [user];
-          localStorage.setItem('clerk_obs_users', JSON.stringify(users));
-          Auth.login(n, p);
-          window.location.href = 'index.html';
+          setupBtn.disabled = true;
+          Auth.hashPassword(p).then(function(hash) {
+            var user = {
+              id: crypto.randomUUID(),
+              username: n,
+              password: hash,
+              displayName: n,
+              role: 'admin',
+              assignedFins: [],
+              mustChangePassword: false,
+              createdAt: new Date().toISOString()
+            };
+            var users = [user];
+            localStorage.setItem('clerk_obs_users', JSON.stringify(users));
+            return Auth.login(n, p);
+          }).then(function() {
+            window.location.href = 'index.html';
+          });
         }
 
         setupBtn.addEventListener('click', doSetup);
@@ -160,19 +164,22 @@
           errEl.hidden = false;
           return;
         }
-        var result = Auth.login(u, p);
-        if (result) {
-          if (result.mustChangePassword) {
-            showPwChange(result);
+        btn.disabled = true;
+        Auth.login(u, p).then(function(result) {
+          btn.disabled = false;
+          if (result) {
+            if (result.mustChangePassword) {
+              showPwChange(result);
+            } else {
+              window.location.href = 'index.html';
+            }
           } else {
-            window.location.href = 'index.html';
+            errEl.textContent = 'Invalid name or password.';
+            errEl.hidden = false;
+            passIn.value = '';
+            passIn.focus();
           }
-        } else {
-          errEl.textContent = 'Invalid name or password.';
-          errEl.hidden = false;
-          passIn.value = '';
-          passIn.focus();
-        }
+        });
       }
 
       btn.addEventListener('click', doLogin);
@@ -201,8 +208,11 @@
             pwErr.textContent = 'Passwords do not match.';
             pwErr.hidden = false; return;
           }
-          Auth.updateUser(loggedInUser.id, { password: np, mustChangePassword: false });
-          window.location.href = 'index.html';
+          pwBtn.disabled = true;
+          Auth.hashPassword(np).then(function(hash) {
+            Auth.updateUser(loggedInUser.id, { password: hash, mustChangePassword: false });
+            window.location.href = 'index.html';
+          });
         }
 
         pwBtn.addEventListener('click', doChange);

@@ -183,8 +183,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // --- Workbook Lead mode ---
   var isLead = (reviewRole === 'lead' || reviewRole === 'teamlead');
   var isLeadUser = isLead || (setup.isLeadUser === true);
-  var isWorkbookMode = isLead && (new URLSearchParams(window.location.search).get('mode') === 'workbook');
-  var isLeadNotesMode = isLeadUser && !isLead;
+  var _urlMode = new URLSearchParams(window.location.search).get('mode');
+  var isWorkbookMode = isLead && (_urlMode !== 'notes');
+  var isLeadNotesMode = (isLeadUser && !isLead) || (isLead && _urlMode === 'notes');
 
   // --- Office Switcher for multi-office reviews ---
   var currentRev = (typeof Reviews !== 'undefined' && Reviews.getById) ? Reviews.getById(reviewId) : null;
@@ -357,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setup.dayNumber = newDay;
             if (dayNumInput) dayNumInput.value = newDay;
             localStorage.setItem('reviewDaySetup', JSON.stringify(setup));
-            window.location.href = 'review.html?rid=' + encodeURIComponent(reviewId) + '&day=' + encodeURIComponent(newDay);
+            window.location.href = 'review.html?rid=' + encodeURIComponent(reviewId) + '&day=' + encodeURIComponent(newDay) + '&mode=notes';
           };
         });
       }
@@ -398,13 +399,9 @@ document.addEventListener('DOMContentLoaded', function() {
       window.location.href = 'review.html?' + params.toString();
     });
     if (wbModeNotes) wbModeNotes.addEventListener('click', function() {
-      if (isLeadNotesMode) {
-        // Already in notes mode (reviewer role), just toggle UI
-        enterNotesMode();
-      } else {
-        // In manage mode — need to check if day is configured
-        enterNotesMode();
-      }
+      var params = new URLSearchParams(window.location.search);
+      params.set('mode', 'notes');
+      window.location.href = 'review.html?' + params.toString();
     });
 
     // Phase toggle (Pre-Review / Review) inside workbook

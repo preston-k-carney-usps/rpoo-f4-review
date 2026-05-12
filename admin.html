@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -441,11 +441,8 @@
 
     // Reset to Default Password button
     editResetPw.addEventListener('click', function() {
-      var name = editName.value.trim();
-      if (!name) return;
-      var defaultPw = name.toLowerCase().replace(/\s+/g, '');
-      editPass.value = defaultPw;
-      editPwStatus.textContent = 'Password reset to default. Status will be "Password change pending".';
+      editPass.value = 'changeme';
+      editPwStatus.textContent = 'Password will be reset to "changeme". Status will be "Password change pending".';
       editPwStatus.style.color = 'var(--warning, #e67e22)';
       editPass.dataset.isDefault = 'true';
     });
@@ -468,15 +465,25 @@
         role: editRole.value,
         assignedFins: (editRole.value === 'admin' || editRole.value === 'readonly') ? [] : editFins.slice()
       };
-      if (editPass.value) {
-        data.password = editPass.value;
-        // Default password reset → force change; Admin-assigned password → active
-        data.mustChangePassword = (editPass.dataset.isDefault === 'true');
-      }
       if (!data.displayName) return;
-      Auth.updateUser(editId.value, data);
-      editSection.hidden = true;
-      renderUsers();
+      editSaveBtn.disabled = true;
+
+      function finish() {
+        Auth.updateUser(editId.value, data);
+        editSection.hidden = true;
+        editSaveBtn.disabled = false;
+        renderUsers();
+      }
+
+      if (editPass.value) {
+        data.mustChangePassword = (editPass.dataset.isDefault === 'true');
+        Auth.hashPassword(editPass.value).then(function(hash) {
+          data.password = hash;
+          finish();
+        });
+      } else {
+        finish();
+      }
     });
 
     editCancelBtn.addEventListener('click', function() {
@@ -547,10 +554,8 @@
         btn.addEventListener('click', function() {
           var u = Auth.getUserById(btn.dataset.id);
           if (!u) return;
-          var defaultPw = u.displayName.toLowerCase().replace(/\s+/g, '');
-          if (confirm('Reset password for "' + u.displayName + '" to default ("' + defaultPw + '") and require password change?')) {
-            Auth.updateUser(u.id, { password: defaultPw, mustChangePassword: true });
-            renderUsers();
+          if (confirm('Reset password for "' + u.displayName + '" to "changeme" and require password change?')) {
+            Auth.resetPassword(u.id).then(function() { renderUsers(); });
           }
         });
       });
@@ -1082,12 +1087,10 @@
 
       // 1. Save users and reset passwords
       var users = Auth.getUsers();
-      users.forEach(function(u) {
-        // Default password = lowercase displayName or username, no spaces
-        var defaultPw = (u.displayName || u.username || '').toLowerCase().replace(/\s+/g, '');
-        Auth.updateUser(u.id, { password: defaultPw, mustChangePassword: true });
+      var hashPromises = users.map(function(u) {
+        return Auth.resetPassword(u.id);
       });
-
+      Promise.all(hashPromises).then(function() {
       // 2. Delete all reviews
       localStorage.removeItem('clerk_obs_reviews');
 
@@ -1118,8 +1121,9 @@
         delReq.onerror = function() { console.warn('IndexedDB clear failed.'); };
       } catch(e) {}
 
-      statusEl.innerHTML = '<span style="color:#16a34a;">✅ Go Live reset complete! All data cleared. User accounts preserved with default passwords.</span>';
+      statusEl.innerHTML = '<span style="color:#16a34a;">✅ Go Live reset complete! All data cleared. User accounts preserved with default passwords ("changeme").</span>';
       setTimeout(function() { location.reload(); }, 2000);
+      }); // end Promise.all
     });
 
     // --- Full Factory Reset ---

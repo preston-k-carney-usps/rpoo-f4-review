@@ -198,8 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide POD-only elements for leads
     var _podDayToggle = document.getElementById('pod-day-toggle');
     var _podPhaseBar = document.getElementById('pod-phase-bar');
-    if (_podDayToggle) _podDayToggle.style.display = 'none';
-    if (_podPhaseBar) _podPhaseBar.style.display = 'none';
+    if (_podDayToggle) _podDayToggle.hidden = true;
+    if (_podPhaseBar) _podPhaseBar.hidden = true;
 
     // Show the title bar with review name (no date) + office buttons inline
     var wbModeBar = document.getElementById('wb-mode-bar');
@@ -297,8 +297,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (wbPanel) wbPanel.classList.add('active');
       // Show WORKBOOK phase bar only (not POD phase bar)
       document.querySelectorAll('.wb-phase-bar').forEach(function(el) {
-        if (el.id === 'pod-phase-bar') { el.style.display = 'none'; }
-        else { el.style.display = ''; }
+        if (el.id === 'pod-phase-bar') { el.hidden = true; }
+        else { el.hidden = false; }
       });
       var activePhase = document.querySelector('.wb-phase-btn--active');
       document.querySelectorAll('.wb-phase-tabs').forEach(function(el) {
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var obsInfoSection = document.getElementById('obs-info-section');
       if (obsInfoSection) obsInfoSection.hidden = true;
       var dayToggle = document.getElementById('pod-day-toggle');
-      if (dayToggle) dayToggle.style.display = 'none';
+      if (dayToggle) dayToggle.hidden = true;
       // Update toggle
       var manageBtn = document.getElementById('wb-mode-manage');
       var notesBtn = document.getElementById('wb-mode-notes');
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Hide workbook panel
       if (wbPanel) wbPanel.classList.remove('active');
       // Hide phase bar and ALL phase sub-tab bars
-      document.querySelectorAll('.wb-phase-bar').forEach(function(el) { el.style.display = 'none'; });
+      document.querySelectorAll('.wb-phase-bar').forEach(function(el) { el.hidden = true; });
       document.querySelectorAll('.wb-phase-tabs').forEach(function(el) { el.style.display = 'none'; });
       // Hide all workbook sub-panels
       document.querySelectorAll('.wb-sub-panel').forEach(function(el) { el.classList.remove('wb-sub-panel--active'); });
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Show Day 1 / Day 2 toggle for lead notes mode
       var leadDayToggle = document.getElementById('pod-day-toggle');
       if (leadDayToggle) {
-        leadDayToggle.style.display = '';
+        leadDayToggle.hidden = false;
         var leadDayBtns = leadDayToggle.querySelectorAll('.pod-day-btn');
         var currentDay = setup.dayNumber || '1';
         leadDayBtns.forEach(function(b) {

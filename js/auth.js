@@ -1,4 +1,4 @@
-﻿/**
+/**
  * auth.js — Role-based access control.
  *
  * Access Levels (system-wide):
@@ -58,7 +58,7 @@ var Auth = (function() {
     var user = {
       id: crypto.randomUUID(),
       username: name,
-      password: data.password || 'changeme',
+      password: data.password || '', // caller must pre-hash
       displayName: name,
       email: data.email || '',
       role: data.role || 'reviewer',
@@ -96,8 +96,8 @@ var Auth = (function() {
           users[i].username = data.displayName; // keep in sync
         }
         if (data.password !== undefined && data.password !== '') {
-          users[i].password = data.password;
-          users[i].mustChangePassword = false;
+          users[i].password = data.password; // caller must pre-hash
+          if (data.mustChangePassword === undefined) users[i].mustChangePassword = false;
         }
         if (data.mustChangePassword !== undefined) users[i].mustChangePassword = data.mustChangePassword;
         if (data.role !== undefined) users[i].role = data.role;
@@ -149,17 +149,66 @@ var Auth = (function() {
     window.location.href = 'login.html';
   }
 
-  // --- Login ---
+  // --- Password hashing (SHA-256) ---
+  function hashPassword(pw) {
+    var enc = new TextEncoder().encode(pw);
+    return crypto.subtle.digest('SHA-256', enc).then(function(buf) {
+      var arr = Array.from(new Uint8Array(buf));
+      return arr.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+    });
+  }
+
+  function isHashed(pw) {
+    return typeof pw === 'string' && pw.length === 64 && /^[0-9a-f]{64}$/.test(pw);
+  }
+
+  // --- Login (async — returns Promise) ---
   function login(username, password) {
     var users = getUsers();
+    var match = null;
     for (var i = 0; i < users.length; i++) {
-      if (users[i].username.toLowerCase() === username.toLowerCase() &&
-          users[i].password === password) {
-        setSession(users[i]);
-        return users[i];
+      if (users[i].username.toLowerCase() === username.toLowerCase()) {
+        match = users[i];
+        break;
       }
     }
-    return null;
+    if (!match) return Promise.resolve(null);
+
+    if (isHashed(match.password)) {
+      return hashPassword(password).then(function(h) {
+        if (h === match.password) { setSession(match); return match; }
+        return null;
+      });
+    }
+    // Legacy plain-text fallback — upgrade to hash on successful login
+    if (match.password === password) {
+      return hashPassword(password).then(function(h) {
+        match.password = h;
+        _saveUsers(users);
+        setSession(match);
+        return match;
+      });
+    }
+    return Promise.resolve(null);
+  }
+
+  // --- Verify a password against stored hash (async) ---
+  function verifyPassword(userId, pw) {
+    var user = getUserById(userId);
+    if (!user) return Promise.resolve(false);
+    if (isHashed(user.password)) {
+      return hashPassword(pw).then(function(h) { return h === user.password; });
+    }
+    return Promise.resolve(user.password === pw);
+  }
+
+  // --- Admin: reset password (sets mustChangePassword) ---
+  function resetPassword(userId) {
+    var tempPw = 'changeme';
+    return hashPassword(tempPw).then(function(h) {
+      updateUser(userId, { password: h, mustChangePassword: true });
+      return tempPw;
+    });
   }
 
   // --- Authorization checks ---
@@ -869,6 +918,9 @@ var Auth = (function() {
     login: login,
     logout: logout,
     currentUser: currentUser,
+    hashPassword: hashPassword,
+    verifyPassword: verifyPassword,
+    resetPassword: resetPassword,
     requireAuth: requireAuth,
     isAdmin: isAdmin,
     isReadOnly: isReadOnly,

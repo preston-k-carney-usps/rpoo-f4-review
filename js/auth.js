@@ -554,6 +554,90 @@ var Auth = (function() {
       '<div id="dd-rand-result" style="min-height:20px;padding:0.3rem;background:var(--bg-light);border:1px solid var(--border);border-radius:4px;font-size:0.78rem;color:var(--success);white-space:pre-line;"></div>';
     panel.appendChild(randWrap);
 
+    // --- Mock Data Generator Buttons ---
+    if (typeof MockData !== 'undefined') {
+      var mockHdr = document.createElement('div');
+      mockHdr.className = 'debug-drawer-role-hdr';
+      mockHdr.style.marginTop = '0.75rem';
+      mockHdr.textContent = '🧪 Mock Data Generators';
+      panel.appendChild(mockHdr);
+
+      var mockWrap = document.createElement('div');
+      mockWrap.style.cssText = 'padding:0.35rem 0.5rem;display:flex;flex-direction:column;gap:0.3rem;';
+
+      var mockStatus = document.createElement('div');
+      mockStatus.style.cssText = 'font-size:0.72rem;color:var(--success);min-height:1.2em;';
+
+      function addMockBtn(label, emoji, fn) {
+        var b = document.createElement('button');
+        b.className = 'btn btn-outline btn-sm';
+        b.style.cssText = 'width:100%;font-size:0.72rem;padding:0.3rem 0.4rem;text-align:left;';
+        b.textContent = emoji + ' ' + label;
+        b.addEventListener('click', function() {
+          mockStatus.textContent = 'Generating...';
+          mockStatus.style.color = 'var(--warning)';
+          setTimeout(function() {
+            try {
+              var result = fn();
+              mockStatus.style.color = 'var(--success)';
+              mockStatus.textContent = '✅ Done! Reload to see data.';
+            } catch(e) {
+              mockStatus.style.color = 'var(--danger)';
+              mockStatus.textContent = '❌ ' + e.message;
+            }
+          }, 50);
+        });
+        mockWrap.appendChild(b);
+      }
+
+      // Track last created review for chaining
+      var _lastMockReviewId = null;
+
+      addMockBtn('Create Mock Review', '📋', function() {
+        var r = MockData.generateReview();
+        _lastMockReviewId = r.id;
+        return r;
+      });
+
+      addMockBtn('Generate Pre-Review Plan', '✈️', function() {
+        var rid = _lastMockReviewId || _findLatestMockReview();
+        if (!rid) throw new Error('Create a mock review first.');
+        return MockData.generatePreReview(rid);
+      });
+
+      addMockBtn('Generate Review Period Notes', '📝', function() {
+        var rid = _lastMockReviewId || _findLatestMockReview();
+        if (!rid) throw new Error('Create a mock review first.');
+        return MockData.generateReviewPeriod(rid);
+      });
+
+      addMockBtn('Generate Post-Review Data', '📊', function() {
+        var rid = _lastMockReviewId || _findLatestMockReview();
+        if (!rid) throw new Error('Create a mock review first.');
+        return MockData.generatePostReview(rid);
+      });
+
+      addMockBtn('Generate EVERYTHING (Full Mock)', '🚀', function() {
+        var r = MockData.generateAll();
+        if (r) _lastMockReviewId = r.id;
+        return r;
+      });
+
+      function _findLatestMockReview() {
+        try {
+          var revs = JSON.parse(localStorage.getItem('clerk_obs_reviews') || '[]');
+          for (var i = revs.length - 1; i >= 0; i--) {
+            if (revs[i].name && revs[i].name.indexOf('Mock') !== -1) return revs[i].id;
+          }
+          if (revs.length > 0) return revs[revs.length - 1].id;
+        } catch(e) {}
+        return null;
+      }
+
+      mockWrap.appendChild(mockStatus);
+      panel.appendChild(mockWrap);
+    }
+
     drawer.appendChild(panel);
     document.body.appendChild(drawer);
 

@@ -27,9 +27,21 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group fg-2">
+        <div class="form-group fg-2" id="login-pass-row">
           <label for="login-pass">Password</label>
           <input type="password" id="login-pass" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="form-row" id="login-newpw-row" hidden>
+        <div class="form-group fg-2">
+          <label for="login-newpw">Create Password</label>
+          <input type="password" id="login-newpw" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="form-row" id="login-confirmpw-row" hidden>
+        <div class="form-group fg-2">
+          <label for="login-confirmpw">Confirm Password</label>
+          <input type="password" id="login-confirmpw" autocomplete="new-password">
         </div>
       </div>
       <div class="setup-actions">
@@ -168,13 +180,69 @@
 
       var userIn   = document.getElementById('login-user');
       var passIn   = document.getElementById('login-pass');
+      var passRow  = document.getElementById('login-pass-row');
+      var newPwRow = document.getElementById('login-newpw-row');
+      var confPwRow = document.getElementById('login-confirmpw-row');
+      var newPwIn  = document.getElementById('login-newpw');
+      var confPwIn = document.getElementById('login-confirmpw');
       var btn      = document.getElementById('login-btn');
       var errEl    = document.getElementById('login-error');
+      var isNewUser = false;
+
+      // Detect new user when email field loses focus or Enter is pressed
+      function checkNewUser() {
+        var u = userIn.value.trim().toLowerCase();
+        if (u && u.indexOf('@') === -1) u = u + '@usps.gov';
+        if (!u) return;
+        var info = Auth.lookupEmail(u);
+        if (info && info.mustChangePassword) {
+          isNewUser = true;
+          passRow.hidden = true;
+          newPwRow.hidden = false;
+          confPwRow.hidden = false;
+          btn.textContent = 'Create Account';
+          newPwIn.focus();
+        } else {
+          isNewUser = false;
+          passRow.hidden = false;
+          newPwRow.hidden = true;
+          confPwRow.hidden = true;
+          btn.textContent = 'Sign In';
+        }
+      }
+      userIn.addEventListener('blur', checkNewUser);
 
       function doLogin() {
         errEl.hidden = true;
         var u = userIn.value.trim().toLowerCase();
         if (u && u.indexOf('@') === -1) u = u + '@usps.gov';
+
+        if (isNewUser) {
+          // New user flow: create password
+          var np = newPwIn.value;
+          var cp = confPwIn.value;
+          if (!u) { errEl.textContent = 'Please enter your USPS email.'; errEl.hidden = false; return; }
+          if (!np || np.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; errEl.hidden = false; return; }
+          if (np !== cp) { errEl.textContent = 'Passwords do not match.'; errEl.hidden = false; return; }
+          btn.disabled = true;
+          Auth.activateUser(u, np).then(function(result) {
+            btn.disabled = false;
+            if (result) {
+              window.location.href = 'index.html';
+            } else {
+              errEl.textContent = 'Account not found or already activated. Try signing in.';
+              errEl.hidden = false;
+              isNewUser = false;
+              passRow.hidden = false;
+              newPwRow.hidden = true;
+              confPwRow.hidden = true;
+              btn.textContent = 'Sign In';
+            }
+          });
+          return;
+        }
+
+        // Normal login flow
         var p = passIn.value;
         if (!u || !p) {
           errEl.textContent = 'Please enter both email and password.';
@@ -201,7 +269,10 @@
 
       btn.addEventListener('click', doLogin);
       passIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
-      userIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') passIn.focus(); });
+      confPwIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+      userIn.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { checkNewUser(); if (!isNewUser) passIn.focus(); }
+      });
 
       function showPwChange(loggedInUser) {
         document.getElementById('login-form').hidden = true;

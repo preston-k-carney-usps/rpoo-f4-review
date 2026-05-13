@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!authUser) return;
   Auth.renderNavbar();
 
+  // POD reviewers: manual sync mode — data saves locally, only pushes on End of Day submit
+  if (authUser.role === 'reviewer' && window.AppSync && AppSync.setManualMode) {
+    AppSync.setManualMode(true);
+  }
+
   const container  = document.getElementById('rows-container');
   const noRowsMsg  = document.getElementById('no-rows-msg');
 
@@ -240,10 +245,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
 
-      // Build office buttons with dates
+      // Build office buttons with dates + assignment status
       var officeBtns = document.getElementById('wb-office-btns');
       if (officeBtns && currentRev && currentRev.offices && currentRev.offices.length > 0) {
         officeBtns.innerHTML = '';
+        var isLead = (authUser.role === 'admin' || authUser.role === 'teamlead');
         currentRev.offices.forEach(function(o) {
           var btn = document.createElement('button');
           btn.className = 'wb-mode-btn';
@@ -254,7 +260,32 @@ document.addEventListener('DOMContentLoaded', function() {
             var e = new Date(o.endDate + 'T00:00:00');
             dateStr = ' (' + (s.getMonth()+1) + '/' + s.getDate() + ' – ' + (e.getMonth()+1) + '/' + e.getDate() + ')';
           }
+
+          // Check assignment completeness for leads
+          if (isLead) {
+            var fin = o.financeNum || '';
+            var schedKey = 'clerk_obs_schedule_' + currentRev.id + (fin ? '_' + fin : '');
+            var schedData = {};
+            try { schedData = JSON.parse(localStorage.getItem(schedKey)) || {}; } catch(e2) {}
+            var schedule = schedData.schedule || [];
+            var assignedNames = schedData.assignedNames || [];
+            var hasDates = !!(o.startDate && o.endDate);
+            var allAssigned = schedule.length > 0 && assignedNames.length > 0 &&
+              schedule.every(function(slot) { return !!slot.assignedTo; });
+            if (hasDates && allAssigned) {
+              btn.classList.add('wb-mode-btn--complete');
+            } else {
+              btn.classList.add('wb-mode-btn--incomplete');
+            }
+          }
+
           btn.textContent = o.officeName + dateStr;
+          // Add status indicator icon for leads
+          if (isLead && btn.classList.contains('wb-mode-btn--complete')) {
+            btn.innerHTML = '&#10003; ' + btn.textContent;
+          } else if (isLead && btn.classList.contains('wb-mode-btn--incomplete')) {
+            btn.innerHTML = '&#9888; ' + btn.textContent;
+          }
           btn.dataset.fin = o.financeNum;
           btn.dataset.office = o.officeName;
           if (o.financeNum === financeNum || o.officeName === setup.office) btn.classList.add('wb-mode-btn--active');

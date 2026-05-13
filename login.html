@@ -146,6 +146,8 @@
     (function() {
       Auth.bootstrap();
 
+      function initLoginPage() {
+
       // ---- Sections ----
       var gateSection   = document.getElementById('gate-section');
       var loginSection  = document.getElementById('login-section');
@@ -340,6 +342,14 @@
         reqPass2.value = '';
         showOnly(gateSection);
       });
+      } // end initLoginPage
+
+      // Wait for sync to finish pulling data before deciding what to show
+      if (window.AppSync && AppSync.onReady) {
+        AppSync.onReady(initLoginPage);
+      } else {
+        initLoginPage();
+      }
     })();
   </script>
 </body>

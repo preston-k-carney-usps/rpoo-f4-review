@@ -285,7 +285,6 @@
                 } catch(e) {}
               }
               _set(key, gistVal);
-              }
             }
           });
           updateStatusUI('online', 'Synced');

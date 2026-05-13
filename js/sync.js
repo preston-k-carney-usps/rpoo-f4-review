@@ -230,7 +230,14 @@
         else _singleKeyMode = false;
       } else {
         online = false;
-        updateStatusUI('offline', 'Sync failed (HTTP ' + x.status + ') - will retry');
+        // Back off for 60 seconds on 403/rate-limit to avoid flooding
+        if (x.status === 403 || x.status === 429) {
+          _backoffUntil = Date.now() + 60000;
+          console.warn('[Sync] ' + x.status + ' — backing off for 60 seconds');
+          updateStatusUI('offline', 'API blocked (' + x.status + ') — retrying in 60s');
+        } else {
+          updateStatusUI('offline', 'Sync failed (HTTP ' + x.status + ') - will retry');
+        }
       }
     };
     x.onerror = function() {
@@ -327,6 +334,10 @@
         if (callback) callback(true);
       } else {
         online = false;
+        if (x.status === 403 || x.status === 429) {
+          _backoffUntil = Date.now() + 60000;
+          console.warn('[Sync] Pull got ' + x.status + ' — backing off 60s');
+        }
         if (callback) callback(false);
       }
     };
@@ -452,9 +463,11 @@
 
   // === Background sync loop ===
   var SYNC_INTERVAL = 10000; // 10 seconds (be kind to GitHub API limits)
+  var _backoffUntil = 0; // Timestamp: skip sync until this time
 
   function backgroundSync() {
     if (!SYNC_ENABLED) return;
+    if (Date.now() < _backoffUntil) return; // Still in backoff period
     var pending = getPendingWrites();
     if (Object.keys(pending).length > 0) {
       flushPending();

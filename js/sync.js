@@ -589,12 +589,46 @@
     updateStatusUI('offline', 'No connection - changes saved locally');
   });
 
+  // === Force push: bypass online check, always attempt ===
+  function forcePushNow() {
+    if (!SYNC_ENABLED) return;
+    var pending = getPendingWrites();
+    var keys = Object.keys(pending);
+    if (keys.length === 0) return;
+
+    var files = {};
+    var hasContent = false;
+    keys.forEach(function(key) {
+      var val = pending[key];
+      if (val !== null && val !== '' && val !== undefined) {
+        files[keyToFile(key)] = { content: String(val) };
+        hasContent = true;
+      }
+    });
+    if (!hasContent) return;
+
+    var x = new XMLHttpRequest();
+    x.open('PATCH', GIST_API, true);
+    x.setRequestHeader('Authorization', 'token ' + TOKEN);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.timeout = 15000;
+    x.onload = function() {
+      if (x.status === 200) {
+        online = true;
+        var current = getPendingWrites();
+        keys.forEach(function(k) { if (current[k] === pending[k]) delete current[k]; });
+        savePendingWrites(current);
+      }
+    };
+    x.send(JSON.stringify({ files: files }));
+  }
+
   // === Public API ===
   window.AppSync = {
     isOnline: function() { return online; },
     pendingCount: getPendingCount,
     forceSync: backgroundSync,
-    forcePush: flushPending,
+    forcePush: forcePushNow,
     forcePull: pullFromGist,
     flushWrites: flushPending
   };

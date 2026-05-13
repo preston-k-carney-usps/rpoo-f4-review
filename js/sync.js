@@ -68,6 +68,10 @@
   var _syncReady = false;
   var _readyCbs = [];
 
+  // Manual mode: data saves to localStorage always, but only pushes to Gist on explicit forcePush().
+  // Set by calling AppSync.setManualMode(true). POD reviewers use this.
+  var _manualMode = false;
+
   function checkConnection(callback) {
     if (!SYNC_ENABLED) { if (callback) callback(false); return; }
     // Lightweight check - hit GitHub API root
@@ -98,7 +102,7 @@
     var pending = getPendingWrites();
     pending[key] = value; // null means delete
     savePendingWrites(pending);
-    scheduleFlush();
+    if (!_manualMode) scheduleFlush();
   }
 
   // === Flush pending writes to Gist ===
@@ -462,11 +466,12 @@
   }
 
   // === Background sync loop ===
-  var SYNC_INTERVAL = 10000; // 10 seconds (be kind to GitHub API limits)
+  var SYNC_INTERVAL = 30000; // 30 seconds (be kind to GitHub API limits)
   var _backoffUntil = 0; // Timestamp: skip sync until this time
 
   function backgroundSync() {
     if (!SYNC_ENABLED) return;
+    if (_manualMode) return; // PODs don't auto-sync
     if (Date.now() < _backoffUntil) return; // Still in backoff period
     var pending = getPendingWrites();
     if (Object.keys(pending).length > 0) {
@@ -687,6 +692,8 @@
     forcePush: forcePushNow,
     forcePull: pullFromGist,
     flushWrites: flushPending,
+    setManualMode: function(flag) { _manualMode = !!flag; },
+    isManualMode: function() { return _manualMode; },
     onReady: function(cb) {
       if (_syncReady) cb();
       else _readyCbs.push(cb);

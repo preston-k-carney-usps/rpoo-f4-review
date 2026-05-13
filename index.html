@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -96,14 +96,19 @@
     } else if (user.role !== 'readonly') {
       html += '<h3 style="margin:1.5rem 0 0.5rem;">Quick Actions</h3>';
       html += '<div class="landing-grid">';
-      html += '<a href="setup.html" class="landing-card landing-card-primary">' +
+      if (user.role === 'admin') {
+        html += '<a href="admin.html" class="landing-card landing-card-primary">' +
+          '<div class="landing-icon">&#10010;</div><h3>Create Review</h3>' +
+          '<p>Set up a new review package — offices, dates, schedule, and team assignments.</p></a>';
+      }
+      html += '<a href="setup.html" class="landing-card' + (user.role !== 'admin' ? ' landing-card-primary' : '') + '">' +
         '<div class="landing-icon">&#128221;</div><h3>Start Review Day</h3>' +
         '<p>Begin a new observation day for an assigned review.</p></a>';
       html += '<a href="summary.html" class="landing-card">' +
         '<div class="landing-icon">&#128202;</div><h3>View Summary</h3>' +
         '<p>Review saved observations and summary reports.</p></a>';
       if (user.role === 'admin') {
-        html += '<a href="admin.html" class="landing-card">' +
+        html += '<a href="admin.html#users" class="landing-card">' +
           '<div class="landing-icon">&#9881;</div><h3>Admin Panel</h3>' +
           '<p>Manage users, reviews, and assignments.</p></a>';
       }

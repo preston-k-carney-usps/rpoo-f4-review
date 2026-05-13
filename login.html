@@ -20,7 +20,10 @@
       <div class="form-row">
         <div class="form-group fg-2">
           <label for="login-user">Email</label>
-          <input type="email" id="login-user" placeholder="first.last@usps.gov" autocomplete="email" autofocus>
+          <div style="display:flex;align-items:center;gap:0">
+            <input type="text" id="login-user" placeholder="first.last" autocomplete="username" autofocus style="border-radius:6px 0 0 6px;border-right:none">
+            <span style="padding:0.55rem 0.75rem;background:var(--card-bg,#e2e8f0);border:1px solid var(--border,#cbd5e1);border-left:none;border-radius:0 6px 6px 0;font-size:0.95rem;color:var(--text-muted,#64748b);white-space:nowrap">@usps.gov</span>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -70,7 +73,10 @@
       <div class="form-row">
         <div class="form-group fg-2">
           <label for="setup-email">Email</label>
-          <input type="email" id="setup-email" placeholder="first.last@usps.gov">
+          <div style="display:flex;align-items:center;gap:0">
+            <input type="text" id="setup-email" placeholder="first.last" style="border-radius:6px 0 0 6px;border-right:none">
+            <span style="padding:0.55rem 0.75rem;background:var(--card-bg,#e2e8f0);border:1px solid var(--border,#cbd5e1);border-left:none;border-radius:0 6px 6px 0;font-size:0.95rem;color:var(--text-muted,#64748b);white-space:nowrap">@usps.gov</span>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -115,6 +121,7 @@
           setupErr.hidden = true;
           var n = nameIn.value.trim();
           var em = document.getElementById('setup-email').value.trim().toLowerCase();
+          if (em && em.indexOf('@') === -1) em = em + '@usps.gov';
           var p = passIn.value;
           var p2 = pass2In.value;
           if (!n) { setupErr.textContent = 'Please enter your name.'; setupErr.hidden = false; return; }
@@ -166,7 +173,8 @@
 
       function doLogin() {
         errEl.hidden = true;
-        var u = userIn.value.trim();
+        var u = userIn.value.trim().toLowerCase();
+        if (u && u.indexOf('@') === -1) u = u + '@usps.gov';
         var p = passIn.value;
         if (!u || !p) {
           errEl.textContent = 'Please enter both email and password.';

@@ -19,21 +19,8 @@
   var TOKEN_KEY = '_gh_token';
   var SKIP_KEY = '_gh_skip_sync';
 
-  // Hardcoded team defaults — ensures sync works on every device without setup
-  var _TC = 'YzUxNzE4NjViNTVhMmZjNTU4MThhMTA3ZTNkZjc4YjR8Z2hwX01pT2RBMWRPcnNteFluRmNBVVNUVWFmSlZqTzB0bTA3M1NsOA==';
-  var _parsed = (function(code) {
-    try { var d = atob(code); var i = d.indexOf('|'); if (i > 0) return { g: d.substring(0, i), t: d.substring(i + 1) }; } catch(e) {}
-    return { g: '', t: '' };
-  })(_TC);
-  var DEFAULT_GIST = _parsed.g;
-  var DEFAULT_TOKEN = _parsed.t;
-
-  var gistId = localStorage.getItem(GIST_KEY) || DEFAULT_GIST;
-  var token = localStorage.getItem(TOKEN_KEY) || DEFAULT_TOKEN;
-
-  // Persist defaults so setup wizard doesn't show
-  if (!localStorage.getItem(GIST_KEY)) localStorage.setItem(GIST_KEY, DEFAULT_GIST);
-  if (!localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, DEFAULT_TOKEN);
+  var gistId = localStorage.getItem(GIST_KEY) || '';
+  var token = localStorage.getItem(TOKEN_KEY) || '';
 
   window.GH_CONFIG = { gistId: gistId, token: token };
 
@@ -310,29 +297,15 @@
                 // Save users to localStorage so sync has them
                 localStorage.setItem('clerk_obs_users', JSON.stringify(users));
                 _joinedUsers = users;
-
-                // Populate dropdown sorted by name
-                var sel = $('gh-name-pick');
-                users.slice().sort(function(a, b) {
-                  return (a.displayName || a.username).localeCompare(b.displayName || b.username);
-                }).forEach(function(u) {
-                  var opt = document.createElement('option');
-                  opt.value = u.id;
-                  opt.textContent = u.displayName || u.username;
-                  sel.appendChild(opt);
-                });
-
-                hide('gh-join');
-                show('gh-pick');
-                $('gh-name-pick').focus();
-                return;
               }
             }
-          } catch(e) { /* fall through to simple success */ }
+          } catch(e) { /* fall through to success */ }
 
-          // No users in gist — show plain success
+          // Connected — redirect to login page
           hide('gh-join');
           show('gh-success');
+          $('gh-btn-done').textContent = 'Go to Login';
+          $('gh-btn-done').onclick = function() { window.location.href = 'login.html'; };
         } else {
           msg('gh-join-msg', 'Could not connect (HTTP ' + x.status + '). Check the code.', false);
           $('gh-btn-connect').disabled = false;

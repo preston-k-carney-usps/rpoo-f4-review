@@ -65,6 +65,8 @@
   // === Connection state ===
   var online = false;
   var syncInProgress = false;
+  var _syncReady = false;
+  var _readyCbs = [];
 
   function checkConnection(callback) {
     if (!SYNC_ENABLED) { if (callback) callback(false); return; }
@@ -522,6 +524,9 @@
   document.documentElement.appendChild(overlay);
 
   function hideOverlay() {
+    _syncReady = true;
+    _readyCbs.forEach(function(cb) { try { cb(); } catch(e) { console.error(e); } });
+    _readyCbs = [];
     var ov = document.getElementById('sync-loading-overlay');
     if (ov) {
       ov.style.opacity = '0';
@@ -630,6 +635,10 @@
     forceSync: backgroundSync,
     forcePush: forcePushNow,
     forcePull: pullFromGist,
-    flushWrites: flushPending
+    flushWrites: flushPending,
+    onReady: function(cb) {
+      if (_syncReady) cb();
+      else _readyCbs.push(cb);
+    }
   };
 })();

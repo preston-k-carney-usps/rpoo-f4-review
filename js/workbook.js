@@ -1339,6 +1339,8 @@
     return employees;
   }
 
+  var _rosterOverride = false; // Admin override flag for office filtering
+
   function renderRoster(employees) {
     if (employees.length === 0) {
       rosterOutput.innerHTML = '<p class="empty-state">No valid roster data found. Check the format.</p>';
@@ -1388,7 +1390,7 @@
 
     // Build notification banner
     var noticeHtml = '';
-    if (extraOffices.length > 0 || missingOffices.length > 0) {
+    if ((extraOffices.length > 0 || missingOffices.length > 0) && !_rosterOverride) {
       noticeHtml += '<div style="margin-bottom:0.75rem;">';
       if (extraOffices.length > 0) {
         noticeHtml += '<div style="padding:0.5rem 0.75rem;background:rgba(217,119,6,0.08);border:1px solid #f59e0b;border-radius:6px;margin-bottom:0.4rem;font-size:0.82rem;">';
@@ -1409,12 +1411,23 @@
       }
       noticeHtml += '</div>';
     }
+    if (_rosterOverride && extraOffices.length > 0) {
+      noticeHtml += '<div style="padding:0.5rem 0.75rem;background:rgba(22,163,74,0.06);border:1px solid #86efac;border-radius:6px;margin-bottom:0.75rem;font-size:0.82rem;">';
+      noticeHtml += '<strong style="color:#166534;">✅ Override applied.</strong> All offices loaded and added to this review.';
+      noticeHtml += '</div>';
+    }
 
     // Filter to only current office if we have a financeNum, otherwise keep review-matched offices
     var filteredEmployees;
     var currentFin = financeNum.replace(/\D/g, '');
-    if (currentFin && byFinance[currentFin]) {
+    if (_rosterOverride) {
+      // Override active — load ALL employees regardless of office match
+      filteredEmployees = employees;
+    } else if (currentFin && byFinance[currentFin]) {
       filteredEmployees = byFinance[currentFin].emps;
+    } else if (reviewOffices.length > 0 && extraOffices.length > 0) {
+      // Has extra offices not in review — load everything (pending override button)
+      filteredEmployees = employees;
     } else if (reviewOffices.length > 0) {
       // Keep only employees whose finance matches any review office
       filteredEmployees = employees.filter(function(emp) {
@@ -1434,6 +1447,16 @@
         var oData = {};
         try { oData = JSON.parse(localStorage.getItem(oKey)) || {}; } catch(e) {}
         oData.roster = byFinance[oFin].emps;
+        localStorage.setItem(oKey, JSON.stringify(oData));
+      });
+    }
+    // Also save extra offices when override is active
+    if (_rosterOverride && extraOffices.length > 0) {
+      extraOffices.forEach(function(f) {
+        var oKey = 'clerk_obs_workbook_' + reviewId + '_' + f;
+        var oData = {};
+        try { oData = JSON.parse(localStorage.getItem(oKey)) || {}; } catch(e) {}
+        oData.roster = byFinance[f].emps;
         localStorage.setItem(oKey, JSON.stringify(oData));
       });
     }
@@ -1484,15 +1507,7 @@
     var overrideBtn = document.getElementById('override-extra-offices');
     if (overrideBtn) {
       overrideBtn.addEventListener('click', function() {
-        // Save extra office data to workbook keys and add them to the review
-        extraOffices.forEach(function(f) {
-          var oKey = 'clerk_obs_workbook_' + reviewId + '_' + f;
-          var oData = {};
-          try { oData = JSON.parse(localStorage.getItem(oKey)) || {}; } catch(e) {}
-          oData.roster = byFinance[f].emps;
-          localStorage.setItem(oKey, JSON.stringify(oData));
-        });
-        // Also add these offices to the review object so they're recognized going forward
+        // Add extra offices to the review so they're recognized
         if (rev) {
           extraOffices.forEach(function(f) {
             var officeName = byFinance[f].office || f;
@@ -1503,39 +1518,9 @@
           });
           Reviews.update(rev.id, { offices: rev.offices });
         }
-        // Re-render with all employees (no filter)
-        overrideBtn.parentNode.parentNode.innerHTML = '<div style="padding:0.5rem 0.75rem;background:rgba(22,163,74,0.06);border:1px solid #86efac;border-radius:6px;font-size:0.82rem;"><strong style="color:#166534;">✅ Override applied.</strong> All offices loaded and added to this review.</div>';
-        // Re-render roster with all employees
-        filteredEmployees = employees;
-        var tableHtml = '<table class="wb-tacs-table wb-roster-table"><thead><tr>' +
-          '<th>Last</th><th>First</th><th>MI</th><th>EMP ID</th><th>Job Title</th><th>LDC</th><th>D/A</th><th>Level</th><th>Start</th><th>Days Off</th><th>Sen Date</th>' +
-          '</tr></thead><tbody>';
-        employees.forEach(function(emp) {
-          tableHtml += '<tr>' +
-            '<td class="wb-tacs-name">' + esc(emp.last) + '</td>' +
-            '<td>' + esc(emp.first) + '</td>' +
-            '<td>' + esc(emp.mi) + '</td>' +
-            '<td>' + esc(emp.empId) + '</td>' +
-            '<td>' + esc(emp.jobTitle) + '</td>' +
-            '<td>' + esc(emp.ldc) + '</td>' +
-            '<td>' + esc(emp.daCode) + '</td>' +
-            '<td>' + esc(emp.level) + '</td>' +
-            '<td>' + esc(emp.start) + '</td>' +
-            '<td>' + esc(emp.daysOff) + '</td>' +
-            '<td>' + esc(emp.senDate) + '</td>' +
-            '</tr>';
-        });
-        tableHtml += '</tbody></table>';
-        tableHtml += '<p style="font-size:0.75rem;color:var(--text-light);margin-top:0.4rem;">' + employees.length + ' employees loaded (all offices)</p>';
-        var existingTable = rosterOutput.querySelector('table');
-        var existingP = rosterOutput.querySelector('p:last-child');
-        if (existingTable) existingTable.outerHTML = tableHtml;
-        else rosterOutput.insertAdjacentHTML('beforeend', tableHtml);
-        if (existingP && existingP.textContent.indexOf('employees loaded') >= 0) existingP.remove();
-        // Save all to current office data too
-        var data = loadData();
-        data.roster = employees;
-        saveData(data);
+        // Set override flag and re-render
+        _rosterOverride = true;
+        renderRoster(employees);
       });
     }
 

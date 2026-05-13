@@ -313,17 +313,75 @@
 
         reqSubmit.disabled = true;
         Auth.hashPassword(pass).then(function(hash) {
-          Auth.submitRequest({
+          var request = {
+            id: crypto.randomUUID(),
             type: 'account',
             firstName: first,
             lastName: last,
             email: email,
-            password: hash
-          });
-          // Force sync to Gist immediately
-          if (window.AppSync && AppSync.forcePush) {
-            AppSync.forcePush();
+            password: hash,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          };
+
+          // Save locally
+          var reqs = [];
+          try { reqs = JSON.parse(localStorage.getItem('clerk_obs_requests')) || []; } catch(e) {}
+          reqs.push(request);
+          localStorage.setItem('clerk_obs_requests', JSON.stringify(reqs));
+
+          // Push DIRECTLY to Gist (bypass sync.js entirely)
+          var cfg = window.GH_CONFIG || {};
+          if (cfg.gistId && cfg.token) {
+            var gistUrl = 'https://api.github.com/gists/' + cfg.gistId;
+            // First GET current requests from Gist, then PATCH with merged data
+            var xGet = new XMLHttpRequest();
+            xGet.open('GET', gistUrl, true);
+            xGet.setRequestHeader('Authorization', 'token ' + cfg.token);
+            xGet.timeout = 10000;
+            xGet.onload = function() {
+              var gistReqs = [];
+              if (xGet.status === 200) {
+                try {
+                  var gist = JSON.parse(xGet.responseText);
+                  var f = gist.files && gist.files['clerk_obs_requests.json'];
+                  if (f && f.content) gistReqs = JSON.parse(f.content);
+                } catch(e) {}
+              }
+              // Merge: add our request if not already there
+              var exists = false;
+              for (var i = 0; i < gistReqs.length; i++) {
+                if (gistReqs[i].id === request.id) { exists = true; break; }
+              }
+              if (!exists) gistReqs.push(request);
+
+              var xPut = new XMLHttpRequest();
+              xPut.open('PATCH', gistUrl, true);
+              xPut.setRequestHeader('Authorization', 'token ' + cfg.token);
+              xPut.setRequestHeader('Content-Type', 'application/json');
+              xPut.timeout = 10000;
+              xPut.onload = function() {
+                if (xPut.status === 200) {
+                  console.log('[Request] Pushed to Gist OK');
+                } else {
+                  console.error('[Request] Gist PATCH failed:', xPut.status, xPut.responseText);
+                }
+              };
+              xPut.onerror = function() { console.error('[Request] Gist PATCH network error'); };
+              xPut.send(JSON.stringify({ files: { 'clerk_obs_requests.json': { content: JSON.stringify(gistReqs) } } }));
+            };
+            xGet.onerror = function() {
+              // GET failed, try PATCH anyway with just our data
+              var xPut = new XMLHttpRequest();
+              xPut.open('PATCH', gistUrl, true);
+              xPut.setRequestHeader('Authorization', 'token ' + cfg.token);
+              xPut.setRequestHeader('Content-Type', 'application/json');
+              xPut.timeout = 10000;
+              xPut.send(JSON.stringify({ files: { 'clerk_obs_requests.json': { content: JSON.stringify([request]) } } }));
+            };
+            xGet.send();
           }
+
           reqSubmit.disabled = false;
           showOnly(doneSection);
         }).catch(function(e) {

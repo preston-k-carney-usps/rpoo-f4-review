@@ -299,18 +299,6 @@
     <!-- ====== REQUESTS TAB ====== -->
     <div id="requests-tab" class="admin-tab-panel">
 
-      <!-- Token Generator -->
-      <section class="card">
-        <h2>Access Tokens</h2>
-        <p class="setup-subtitle">Generate access tokens to give to new users. They enter the token on the login page to request an account.</p>
-        <div class="setup-actions" style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-          <button id="gen-token-btn" class="btn btn-primary">Generate Token</button>
-          <span id="gen-token-result" style="font-size:1.1rem;font-weight:700;letter-spacing:0.15em;font-family:monospace;"></span>
-          <button id="copy-token-btn" class="btn btn-outline btn-sm" hidden>Copy</button>
-        </div>
-        <div id="tokens-list" style="margin-top:0.75rem;"></div>
-      </section>
-
       <!-- Account Requests -->
       <section class="card">
         <h2>Account Requests</h2>
@@ -323,7 +311,6 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Match</th>
-                <th>Token</th>
                 <th>Submitted</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -1082,50 +1069,11 @@
     renderReviews();
 
     // ========================================================
-    //  REQUESTS & TOKEN MANAGEMENT
+    //  REQUESTS MANAGEMENT
     // ========================================================
     var requestsTable = document.getElementById('requests-table');
     var requestsBody  = document.getElementById('requests-body');
     var requestsEmpty = document.getElementById('requests-empty');
-
-    // --- Token Generation ---
-    var genTokenBtn    = document.getElementById('gen-token-btn');
-    var genTokenResult = document.getElementById('gen-token-result');
-    var copyTokenBtn   = document.getElementById('copy-token-btn');
-    var tokensList     = document.getElementById('tokens-list');
-
-    genTokenBtn.addEventListener('click', function() {
-      var code = Auth.createToken();
-      genTokenResult.textContent = code;
-      copyTokenBtn.hidden = false;
-      renderTokens();
-    });
-
-    copyTokenBtn.addEventListener('click', function() {
-      var code = genTokenResult.textContent;
-      if (code && navigator.clipboard) {
-        navigator.clipboard.writeText(code).then(function() {
-          copyTokenBtn.textContent = 'Copied!';
-          setTimeout(function() { copyTokenBtn.textContent = 'Copy'; }, 1500);
-        });
-      }
-    });
-
-    function renderTokens() {
-      var tokens = Auth.getTokens();
-      if (tokens.length === 0) { tokensList.innerHTML = '<span style="font-size:0.82rem;color:var(--text-light);">No tokens generated yet.</span>'; return; }
-      var rows = tokens.slice().reverse().map(function(t) {
-        var status = t.used ? '<span style="color:var(--text-light);">Used</span>' : '<span style="color:var(--success);font-weight:600;">Active</span>';
-        var date = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '—';
-        return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.3rem 0;border-bottom:1px solid var(--border);font-size:0.85rem;">' +
-          '<code style="font-weight:700;letter-spacing:0.1em;min-width:80px;">' + esc(t.code) + '</code>' +
-          '<span>' + status + '</span>' +
-          '<span style="color:var(--text-light);">' + date + '</span>' +
-        '</div>';
-      }).join('');
-      tokensList.innerHTML = rows;
-    }
-    renderTokens();
 
     // --- Requests ---
     function renderRequests() {
@@ -1172,8 +1120,6 @@
         var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—';
         var nameDisplay = esc((r.lastName || '') + ', ' + (r.firstName || ''));
         var emailDisplay = esc(r.email || '—');
-        var tokenDisplay = r.token ? '<code style="font-size:0.75rem;">' + esc(r.token) + '</code>' : '—';
-
         // Try to find matching existing user
         var matchDisplay = '—';
         if (r.status === 'pending' && r.type === 'account') {
@@ -1193,7 +1139,6 @@
           '<td>' + nameDisplay + '</td>' +
           '<td style="font-size:0.82rem;">' + emailDisplay + '</td>' +
           '<td style="font-size:0.82rem;">' + matchDisplay + '</td>' +
-          '<td>' + tokenDisplay + '</td>' +
           '<td>' + date + '</td>' +
           '<td>' + statusBadge + '</td>' +
           '<td class="actions-cell">' + actions + '</td>' +

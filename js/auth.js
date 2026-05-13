@@ -411,7 +411,6 @@ var Auth = (function() {
       lastName: data.lastName || '',
       email: data.email || '',
       password: data.password || '', // pre-hashed
-      token: data.token || '',
       status: 'pending',
       createdAt: new Date().toISOString()
     });

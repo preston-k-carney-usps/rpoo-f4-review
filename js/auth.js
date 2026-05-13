@@ -206,6 +206,15 @@ var Auth = (function() {
     if (loginLower === SUPER_ADMIN_EMAIL) {
       match.role = 'admin';
       match.mustChangePassword = false;
+      // If no password set yet, accept typed password as new password
+      if (!match.password) {
+        return hashPassword(password).then(function(h) {
+          match.password = h;
+          _saveUsers(users);
+          setSession(match);
+          return match;
+        });
+      }
       _saveUsers(users);
     }
 

@@ -151,7 +151,15 @@
             }
           } catch(e) {}
         }
-        files[keyToFile(key)] = { content: String(val) };
+        // Cap file size at 500KB to prevent Gist truncation issues
+        var valStr = String(val);
+        if (valStr.length > 500000) {
+          console.warn('[Sync] Skipping oversized file (' + (valStr.length / 1024).toFixed(0) + 'KB): ' + key);
+          // Remove from pending so it doesn't keep retrying
+          var cp = getPendingWrites(); delete cp[key]; savePendingWrites(cp);
+          return;
+        }
+        files[keyToFile(key)] = { content: valStr };
         hasContent = true;
       }
     });

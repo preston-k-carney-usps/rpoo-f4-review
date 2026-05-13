@@ -13,71 +13,104 @@
   </nav>
 
   <main class="container login-container">
+    <!-- Step 1: Token + Choose Action -->
+    <section class="card login-card" id="gate-section">
+      <h2>Welcome</h2>
+      <p class="setup-subtitle">Enter your access token to request a new account, or log in with an existing account.</p>
+
+      <div class="form-row" id="token-row">
+        <div class="form-group fg-2">
+          <label for="gate-token">Access Token</label>
+          <input type="text" id="gate-token" placeholder="Enter token from admin" autocomplete="off" style="text-transform:uppercase;letter-spacing:0.1em">
+        </div>
+      </div>
+      <p id="token-error" class="status-msg error" hidden></p>
+
+      <div class="setup-actions" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <button id="btn-login" class="btn btn-primary btn-lg" style="flex:1;min-width:140px;">Log In</button>
+        <button id="btn-request" class="btn btn-secondary btn-lg" style="flex:1;min-width:140px;opacity:0.5;" disabled>Request Account</button>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-light);margin-top:0.5rem;text-align:center;" id="token-hint">Enter a valid token to unlock "Request Account"</p>
+    </section>
+
     <!-- Login Form -->
-    <section class="card login-card" id="login-form">
-      <h2>Sign In</h2>
-      <p class="setup-subtitle" id="login-subtitle">Enter your USPS email to continue.</p>
+    <section class="card login-card" id="login-section" hidden>
+      <h2>Log In</h2>
+      <p class="setup-subtitle">Enter your USPS email and password.</p>
       <div class="form-row">
         <div class="form-group fg-2">
-          <label for="login-user">USPS Email</label>
+          <label for="login-email">USPS Email</label>
           <div style="display:flex;align-items:center;gap:0">
-            <input type="text" id="login-user" autocomplete="username" autofocus style="border-radius:6px 0 0 6px;border-right:none">
+            <input type="text" id="login-email" autocomplete="username" autofocus style="border-radius:6px 0 0 6px;border-right:none">
             <span style="padding:0.55rem 0.75rem;background:var(--card-bg,#e2e8f0);border:1px solid var(--border,#cbd5e1);border-left:none;border-radius:0 6px 6px 0;font-size:0.95rem;color:var(--text-muted,#64748b);white-space:nowrap">@usps.gov</span>
           </div>
         </div>
       </div>
-      <!-- Step 2: shown after Continue -->
-      <div id="login-step2" hidden>
-        <!-- existing user: password -->
-        <div class="form-row" id="login-pass-row" hidden>
-          <div class="form-group fg-2">
-            <label for="login-pass">Password</label>
-            <input type="password" id="login-pass" autocomplete="current-password">
-          </div>
-        </div>
-        <!-- new user: create password -->
-        <div class="form-row" id="login-newpw-row" hidden>
-          <div class="form-group fg-2">
-            <label for="login-newpw">Create Password</label>
-            <input type="password" id="login-newpw" autocomplete="new-password">
-          </div>
-        </div>
-        <div class="form-row" id="login-confirmpw-row" hidden>
-          <div class="form-group fg-2">
-            <label for="login-confirmpw">Confirm Password</label>
-            <input type="password" id="login-confirmpw" autocomplete="new-password">
-          </div>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="login-pass">Password</label>
+          <input type="password" id="login-pass" autocomplete="current-password">
         </div>
       </div>
-      <div class="setup-actions">
-        <button id="login-btn" class="btn btn-primary btn-lg">Continue</button>
+      <div class="setup-actions" style="display:flex;gap:0.75rem;">
+        <button id="login-back-btn" class="btn btn-secondary">Back</button>
+        <button id="login-submit-btn" class="btn btn-primary btn-lg" style="flex:1;">Sign In</button>
       </div>
       <p id="login-error" class="status-msg error" hidden></p>
     </section>
 
-    <!-- Force Password Change Form (hidden) -->
-    <section class="card login-card" id="pw-change-form" hidden>
-      <h2>Change Your Password</h2>
-      <p class="setup-subtitle">Your account requires a password change before continuing.</p>
+    <!-- Request Account Form -->
+    <section class="card login-card" id="request-section" hidden>
+      <h2>Request an Account</h2>
+      <p class="setup-subtitle">Fill out your information below. An admin will review and approve your request.</p>
       <div class="form-row">
-        <div class="form-group fg-2">
-          <label for="new-pass">New Password</label>
-          <input type="password" id="new-pass" autocomplete="new-password" autofocus>
+        <div class="form-group">
+          <label for="req-first">First Name</label>
+          <input type="text" id="req-first" autocomplete="given-name">
+        </div>
+        <div class="form-group">
+          <label for="req-last">Last Name</label>
+          <input type="text" id="req-last" autocomplete="family-name">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group fg-2">
-          <label for="confirm-pass">Confirm Password</label>
-          <input type="password" id="confirm-pass" autocomplete="new-password">
+          <label for="req-email">USPS Email</label>
+          <div style="display:flex;align-items:center;gap:0">
+            <input type="text" id="req-email" autocomplete="email" style="border-radius:6px 0 0 6px;border-right:none">
+            <span style="padding:0.55rem 0.75rem;background:var(--card-bg,#e2e8f0);border:1px solid var(--border,#cbd5e1);border-left:none;border-radius:0 6px 6px 0;font-size:0.95rem;color:var(--text-muted,#64748b);white-space:nowrap">@usps.gov</span>
+          </div>
         </div>
       </div>
-      <div class="setup-actions">
-        <button id="pw-change-btn" class="btn btn-primary btn-lg">Set Password &amp; Continue</button>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="req-pass">Create Password</label>
+          <input type="password" id="req-pass" autocomplete="new-password">
+        </div>
       </div>
-      <p id="pw-error" class="status-msg error" hidden></p>
+      <div class="form-row">
+        <div class="form-group fg-2">
+          <label for="req-pass2">Confirm Password</label>
+          <input type="password" id="req-pass2" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="setup-actions" style="display:flex;gap:0.75rem;">
+        <button id="req-back-btn" class="btn btn-secondary">Back</button>
+        <button id="req-submit-btn" class="btn btn-primary btn-lg" style="flex:1;">Submit Request</button>
+      </div>
+      <p id="req-error" class="status-msg error" hidden></p>
     </section>
 
-    <!-- First-Run Admin Setup (hidden) -->
+    <!-- Request Submitted Confirmation -->
+    <section class="card login-card" id="request-done-section" hidden>
+      <h2 style="color:var(--success);">&#10003; Request Submitted</h2>
+      <p class="setup-subtitle">Your account request has been submitted for review. An admin will approve or deny your request. Once approved, you can log in with the email and password you provided.</p>
+      <div class="setup-actions">
+        <button id="done-back-btn" class="btn btn-primary btn-lg">Back to Login</button>
+      </div>
+    </section>
+
+    <!-- First-Run Admin Setup (shown when no users exist at all) -->
     <section class="card login-card" id="first-run-form" hidden>
       <h2>First-Time Setup</h2>
       <p class="setup-subtitle">Create your admin account to get started.</p>
@@ -122,12 +155,24 @@
     (function() {
       Auth.bootstrap();
 
-      // First-run: no users exist yet
+      // ---- Sections ----
+      var gateSection   = document.getElementById('gate-section');
+      var loginSection  = document.getElementById('login-section');
+      var reqSection    = document.getElementById('request-section');
+      var doneSection   = document.getElementById('request-done-section');
+      var firstRunForm  = document.getElementById('first-run-form');
+
+      function showOnly(section) {
+        [gateSection, loginSection, reqSection, doneSection, firstRunForm].forEach(function(s) {
+          s.hidden = true;
+        });
+        section.hidden = false;
+      }
+
+      // ---- First-run: no users exist ----
       var allUsers = Auth.getUsers();
       if (allUsers.length === 0) {
-        document.getElementById('login-form').hidden = true;
-        var frForm = document.getElementById('first-run-form');
-        frForm.hidden = false;
+        showOnly(firstRunForm);
         var nameIn = document.getElementById('setup-name');
         var passIn = document.getElementById('setup-pass');
         var pass2In = document.getElementById('setup-pass2');
@@ -158,8 +203,7 @@
               mustChangePassword: false,
               createdAt: new Date().toISOString()
             };
-            var users = [user];
-            localStorage.setItem('clerk_obs_users', JSON.stringify(users));
+            localStorage.setItem('clerk_obs_users', JSON.stringify([user]));
             return Auth.login(em, p);
           }).then(function() {
             window.location.href = 'index.html';
@@ -172,170 +216,169 @@
         return;
       }
 
+      // ---- Already logged in? ----
       var session = Auth.currentUser();
       if (session && !session.mustChangePassword) {
         window.location.href = 'index.html';
         return;
       }
-      // If must change password, show that form immediately
-      if (session && session.mustChangePassword) {
-        showPwChange(session);
-        return;
-      }
 
-      var userIn   = document.getElementById('login-user');
-      var step2    = document.getElementById('login-step2');
-      var passRow  = document.getElementById('login-pass-row');
-      var passIn   = document.getElementById('login-pass');
-      var newPwRow = document.getElementById('login-newpw-row');
-      var confPwRow = document.getElementById('login-confirmpw-row');
-      var newPwIn  = document.getElementById('login-newpw');
-      var confPwIn = document.getElementById('login-confirmpw');
-      var btn      = document.getElementById('login-btn');
-      var errEl    = document.getElementById('login-error');
-      var subtitle = document.getElementById('login-subtitle');
-      var step = 'email'; // 'email' | 'password' | 'create'
+      // ---- Gate Section: Token + Log In / Request Account ----
+      var tokenInput   = document.getElementById('gate-token');
+      var tokenError   = document.getElementById('token-error');
+      var tokenHint    = document.getElementById('token-hint');
+      var btnLogin     = document.getElementById('btn-login');
+      var btnRequest   = document.getElementById('btn-request');
 
-      function getEmail() {
-        var u = userIn.value.trim().toLowerCase();
-        if (u && u.indexOf('@') === -1) u = u + '@usps.gov';
-        return u;
-      }
-
-      function showError(msg) {
-        errEl.textContent = msg;
-        errEl.hidden = false;
-      }
-
-      function doAction() {
-        try {
-          errEl.hidden = true;
-
-          if (step === 'email') {
-            var u = getEmail();
-            if (!u) { showError('Please enter your USPS email.'); return; }
-
-            // Look up user
-            var info = null;
-            try { info = Auth.lookupEmail(u); } catch(e) { console.error('lookupEmail error:', e); }
-
-            userIn.readOnly = true;
-            userIn.style.opacity = '0.7';
-            step2.hidden = false;
-
-            if (info && info.mustChangePassword) {
-              step = 'create';
-              subtitle.textContent = 'Welcome! Create a password for your account.';
-              newPwRow.hidden = false;
-              confPwRow.hidden = false;
-              btn.textContent = 'Create Account';
-              setTimeout(function() { newPwIn.focus(); }, 50);
-            } else {
-              step = 'password';
-              subtitle.textContent = 'Enter your password.';
-              passRow.hidden = false;
-              btn.textContent = 'Sign In';
-              setTimeout(function() { passIn.focus(); }, 50);
-            }
-            return;
-          }
-
-          if (step === 'create') {
-            var u = getEmail();
-            var np = newPwIn.value;
-            var cp = confPwIn.value;
-            if (!np || np.length < 4) { showError('Password must be at least 4 characters.'); return; }
-            if (np !== cp) { showError('Passwords do not match.'); return; }
-            btn.disabled = true;
-            Auth.activateUser(u, np).then(function(result) {
-              btn.disabled = false;
-              if (result) {
-                window.location.href = 'index.html';
-              } else {
-                showError('Could not activate account. Try signing in instead.');
-                resetToEmail();
-              }
-            }).catch(function(e) { btn.disabled = false; showError('Error: ' + e.message); });
-            return;
-          }
-
-          if (step === 'password') {
-            var u = getEmail();
-            var p = passIn.value;
-            if (!p) { showError('Please enter your password.'); return; }
-            btn.disabled = true;
-            Auth.login(u, p).then(function(result) {
-              btn.disabled = false;
-              if (result) {
-                if (result.mustChangePassword) {
-                  showPwChange(result);
-                } else {
-                  window.location.href = 'index.html';
-                }
-              } else {
-                showError('Incorrect password.');
-                passIn.value = '';
-                passIn.focus();
-              }
-            }).catch(function(e) { btn.disabled = false; showError('Error: ' + e.message); });
-            return;
-          }
-        } catch(e) {
-          console.error('Login error:', e);
-          showError('Something went wrong: ' + e.message);
+      // Enable "Request Account" when valid token entered
+      tokenInput.addEventListener('input', function() {
+        tokenError.hidden = true;
+        var code = tokenInput.value.trim();
+        if (code && Auth.validateToken(code)) {
+          btnRequest.disabled = false;
+          btnRequest.style.opacity = '1';
+          tokenHint.textContent = 'Token valid — you can request an account or log in.';
+          tokenHint.style.color = 'var(--success)';
+        } else {
+          btnRequest.disabled = true;
+          btnRequest.style.opacity = '0.5';
+          tokenHint.textContent = code ? 'Invalid or used token.' : 'Enter a valid token to unlock "Request Account"';
+          tokenHint.style.color = code ? 'var(--danger)' : '';
         }
-      }
+      });
 
-      function resetToEmail() {
-        step = 'email';
-        userIn.readOnly = false;
-        userIn.style.opacity = '';
-        step2.hidden = true;
-        passRow.hidden = true;
-        newPwRow.hidden = true;
-        confPwRow.hidden = true;
-        btn.textContent = 'Continue';
-        subtitle.textContent = 'Enter your USPS email to continue.';
-        userIn.focus();
-      }
+      // Log In button → show login form
+      btnLogin.addEventListener('click', function() {
+        showOnly(loginSection);
+        document.getElementById('login-email').focus();
+      });
 
-      btn.addEventListener('click', doAction);
-      passIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doAction(); });
-      confPwIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doAction(); });
-      userIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doAction(); });
+      // Request Account button → show request form (only if valid token)
+      btnRequest.addEventListener('click', function() {
+        var code = tokenInput.value.trim();
+        if (!Auth.validateToken(code)) {
+          tokenError.textContent = 'Please enter a valid access token.';
+          tokenError.hidden = false;
+          return;
+        }
+        showOnly(reqSection);
+        document.getElementById('req-first').focus();
+      });
 
-      function showPwChange(loggedInUser) {
-        document.getElementById('login-form').hidden = true;
-        var pwForm    = document.getElementById('pw-change-form');
-        var newPassIn = document.getElementById('new-pass');
-        var confIn    = document.getElementById('confirm-pass');
-        var pwBtn     = document.getElementById('pw-change-btn');
-        var pwErr     = document.getElementById('pw-error');
-        pwForm.hidden = false;
-        newPassIn.focus();
+      // ---- Login Form ----
+      var loginEmail   = document.getElementById('login-email');
+      var loginPass    = document.getElementById('login-pass');
+      var loginErr     = document.getElementById('login-error');
+      var loginSubmit  = document.getElementById('login-submit-btn');
+      var loginBack    = document.getElementById('login-back-btn');
 
-        function doChange() {
-          pwErr.hidden = true;
-          var np = newPassIn.value;
-          var cp = confIn.value;
-          if (!np || np.length < 3) {
-            pwErr.textContent = 'Password must be at least 3 characters.';
-            pwErr.hidden = false; return;
-          }
-          if (np !== cp) {
-            pwErr.textContent = 'Passwords do not match.';
-            pwErr.hidden = false; return;
-          }
-          pwBtn.disabled = true;
-          Auth.hashPassword(np).then(function(hash) {
-            Auth.updateUser(loggedInUser.id, { password: hash, mustChangePassword: false });
+      loginBack.addEventListener('click', function() {
+        loginErr.hidden = true;
+        loginEmail.value = '';
+        loginPass.value = '';
+        showOnly(gateSection);
+      });
+
+      function doLogin() {
+        loginErr.hidden = true;
+        var email = loginEmail.value.trim().toLowerCase();
+        if (email && email.indexOf('@') === -1) email = email + '@usps.gov';
+        var pass = loginPass.value;
+        if (!email) { loginErr.textContent = 'Please enter your email.'; loginErr.hidden = false; return; }
+        if (!pass) { loginErr.textContent = 'Please enter your password.'; loginErr.hidden = false; return; }
+        loginSubmit.disabled = true;
+        Auth.login(email, pass).then(function(result) {
+          loginSubmit.disabled = false;
+          if (!result) {
+            loginErr.textContent = 'Incorrect email or password.';
+            loginErr.hidden = false;
+            loginPass.value = '';
+            loginPass.focus();
+          } else if (result.error === 'pending') {
+            loginErr.textContent = 'Your account is pending admin approval. Please wait for approval.';
+            loginErr.hidden = false;
+          } else {
             window.location.href = 'index.html';
-          });
-        }
-
-        pwBtn.addEventListener('click', doChange);
-        confIn.addEventListener('keydown', function(e) { if (e.key === 'Enter') doChange(); });
+          }
+        }).catch(function(e) {
+          loginSubmit.disabled = false;
+          loginErr.textContent = 'Error: ' + e.message;
+          loginErr.hidden = false;
+        });
       }
+
+      loginSubmit.addEventListener('click', doLogin);
+      loginPass.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+      loginEmail.addEventListener('keydown', function(e) { if (e.key === 'Enter') loginPass.focus(); });
+
+      // ---- Request Account Form ----
+      var reqFirst   = document.getElementById('req-first');
+      var reqLast    = document.getElementById('req-last');
+      var reqEmail   = document.getElementById('req-email');
+      var reqPass    = document.getElementById('req-pass');
+      var reqPass2   = document.getElementById('req-pass2');
+      var reqErr     = document.getElementById('req-error');
+      var reqSubmit  = document.getElementById('req-submit-btn');
+      var reqBack    = document.getElementById('req-back-btn');
+
+      reqBack.addEventListener('click', function() {
+        reqErr.hidden = true;
+        showOnly(gateSection);
+      });
+
+      function doRequest() {
+        reqErr.hidden = true;
+        var first = reqFirst.value.trim();
+        var last = reqLast.value.trim();
+        var email = reqEmail.value.trim().toLowerCase();
+        if (email && email.indexOf('@') === -1) email = email + '@usps.gov';
+        var pass = reqPass.value;
+        var pass2 = reqPass2.value;
+        var token = tokenInput.value.trim().toUpperCase();
+
+        if (!first) { reqErr.textContent = 'Please enter your first name.'; reqErr.hidden = false; return; }
+        if (!last) { reqErr.textContent = 'Please enter your last name.'; reqErr.hidden = false; return; }
+        if (!email) { reqErr.textContent = 'Please enter your USPS email.'; reqErr.hidden = false; return; }
+        if (!pass || pass.length < 4) { reqErr.textContent = 'Password must be at least 4 characters.'; reqErr.hidden = false; return; }
+        if (pass !== pass2) { reqErr.textContent = 'Passwords do not match.'; reqErr.hidden = false; return; }
+        if (!Auth.validateToken(token)) { reqErr.textContent = 'Invalid access token.'; reqErr.hidden = false; return; }
+
+        reqSubmit.disabled = true;
+        Auth.hashPassword(pass).then(function(hash) {
+          Auth.submitRequest({
+            type: 'account',
+            firstName: first,
+            lastName: last,
+            email: email,
+            password: hash,
+            token: token
+          });
+          reqSubmit.disabled = false;
+          showOnly(doneSection);
+        }).catch(function(e) {
+          reqSubmit.disabled = false;
+          reqErr.textContent = 'Error: ' + e.message;
+          reqErr.hidden = false;
+        });
+      }
+
+      reqSubmit.addEventListener('click', doRequest);
+      reqPass2.addEventListener('keydown', function(e) { if (e.key === 'Enter') doRequest(); });
+
+      // ---- Done section ----
+      document.getElementById('done-back-btn').addEventListener('click', function() {
+        reqFirst.value = '';
+        reqLast.value = '';
+        reqEmail.value = '';
+        reqPass.value = '';
+        reqPass2.value = '';
+        tokenInput.value = '';
+        btnRequest.disabled = true;
+        btnRequest.style.opacity = '0.5';
+        tokenHint.textContent = 'Enter a valid token to unlock "Request Account"';
+        tokenHint.style.color = '';
+        showOnly(gateSection);
+      });
     })();
   </script>
 </body>

@@ -560,6 +560,20 @@
     '<style>@keyframes sync-spin{to{transform:rotate(360deg)}}</style>';
   document.documentElement.appendChild(overlay);
 
+  // Safety net: force-remove overlay after 6 seconds no matter what
+  setTimeout(function() {
+    var ov = document.getElementById('sync-loading-overlay');
+    if (ov && ov.parentNode) {
+      console.warn('[Sync] Force-removing stuck overlay');
+      ov.parentNode.removeChild(ov);
+      if (!_syncReady) {
+        _syncReady = true;
+        _readyCbs.forEach(function(cb) { try { cb(); } catch(e) {} });
+        _readyCbs = [];
+      }
+    }
+  }, 6000);
+
   function hideOverlay() {
     _syncReady = true;
     _readyCbs.forEach(function(cb) { try { cb(); } catch(e) { console.error(e); } });

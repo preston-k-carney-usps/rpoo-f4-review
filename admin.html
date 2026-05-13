@@ -1157,7 +1157,13 @@
 
         var actions = '';
         if (r.status === 'pending') {
-          actions = '<button class="btn btn-primary btn-sm req-approve-btn" data-id="' + r.id + '">Approve</button> ' +
+          actions = '<select class="req-role-sel" data-id="' + r.id + '" style="font-size:0.78rem;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text);margin-bottom:4px;">' +
+            '<option value="reviewer">POD</option>' +
+            '<option value="teamlead">Review Lead</option>' +
+            '<option value="readonly">Read Only</option>' +
+            '<option value="admin">Admin</option>' +
+          '</select><br>' +
+          '<button class="btn btn-primary btn-sm req-approve-btn" data-id="' + r.id + '" style="margin-right:4px;">Approve</button>' +
                     '<button class="btn btn-danger btn-sm req-deny-btn" data-id="' + r.id + '">Deny</button>';
         } else {
           actions = '<button class="btn btn-outline btn-sm req-dismiss-btn" data-id="' + r.id + '">Dismiss</button>';
@@ -1197,7 +1203,9 @@
       // Approve handlers
       requestsBody.querySelectorAll('.req-approve-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-          Auth.resolveRequest(btn.dataset.id, 'approved');
+          var roleSel = requestsBody.querySelector('.req-role-sel[data-id="' + btn.dataset.id + '"]');
+          var role = roleSel ? roleSel.value : 'reviewer';
+          Auth.resolveRequest(btn.dataset.id, 'approved', role);
           renderRequests();
           renderUsers();
         });

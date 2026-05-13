@@ -16,7 +16,7 @@
     <!-- Step 1: Token + Choose Action -->
     <section class="card login-card" id="gate-section">
       <h2>Welcome</h2>
-      <p class="setup-subtitle">Enter your access token to request a new account, or log in with an existing account.</p>
+      <p class="setup-subtitle">Enter your access token to continue.</p>
 
       <div class="form-row" id="token-row">
         <div class="form-group fg-2">
@@ -27,10 +27,10 @@
       <p id="token-error" class="status-msg error" hidden></p>
 
       <div class="setup-actions" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-        <button id="btn-login" class="btn btn-primary btn-lg" style="flex:1;min-width:140px;">Log In</button>
+        <button id="btn-login" class="btn btn-primary btn-lg" style="flex:1;min-width:140px;opacity:0.5;" disabled>Log In</button>
         <button id="btn-request" class="btn btn-secondary btn-lg" style="flex:1;min-width:140px;opacity:0.5;" disabled>Request Account</button>
       </div>
-      <p style="font-size:0.78rem;color:var(--text-light);margin-top:0.5rem;text-align:center;" id="token-hint">Enter a valid token to unlock "Request Account"</p>
+      <p style="font-size:0.78rem;color:var(--text-light);margin-top:0.5rem;text-align:center;" id="token-hint">Enter a valid access token to continue</p>
     </section>
 
     <!-- Login Form -->
@@ -230,25 +230,35 @@
       var btnLogin     = document.getElementById('btn-login');
       var btnRequest   = document.getElementById('btn-request');
 
-      // Enable "Request Account" when valid token entered
+      // Enable both buttons when valid token entered
       tokenInput.addEventListener('input', function() {
         tokenError.hidden = true;
         var code = tokenInput.value.trim();
         if (code && Auth.validateToken(code)) {
+          btnLogin.disabled = false;
+          btnLogin.style.opacity = '1';
           btnRequest.disabled = false;
           btnRequest.style.opacity = '1';
-          tokenHint.textContent = 'Token valid — you can request an account or log in.';
+          tokenHint.textContent = 'Token valid — log in or request an account.';
           tokenHint.style.color = 'var(--success)';
         } else {
+          btnLogin.disabled = true;
+          btnLogin.style.opacity = '0.5';
           btnRequest.disabled = true;
           btnRequest.style.opacity = '0.5';
-          tokenHint.textContent = code ? 'Invalid or used token.' : 'Enter a valid token to unlock "Request Account"';
+          tokenHint.textContent = code ? 'Invalid or used token.' : 'Enter a valid access token to continue';
           tokenHint.style.color = code ? 'var(--danger)' : '';
         }
       });
 
-      // Log In button → show login form
+      // Log In button → show login form (token must be valid)
       btnLogin.addEventListener('click', function() {
+        var code = tokenInput.value.trim();
+        if (!Auth.validateToken(code)) {
+          tokenError.textContent = 'Please enter a valid access token.';
+          tokenError.hidden = false;
+          return;
+        }
         showOnly(loginSection);
         document.getElementById('login-email').focus();
       });

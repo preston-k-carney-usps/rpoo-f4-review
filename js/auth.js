@@ -132,6 +132,7 @@ var Auth = (function() {
       id: user.id,
       username: user.username,
       displayName: user.displayName,
+      email: user.email || '',
       role: user.role,
       assignedFins: user.assignedFins || [],
       mustChangePassword: !!user.mustChangePassword
@@ -183,8 +184,11 @@ var Auth = (function() {
 
     var users = getUsers();
     var match = null;
+    var loginLower = username.toLowerCase();
     for (var i = 0; i < users.length; i++) {
-      if (users[i].username.toLowerCase() === username.toLowerCase()) {
+      // Match by email (primary) or username (fallback for legacy)
+      if ((users[i].email && users[i].email.toLowerCase() === loginLower) ||
+          users[i].username.toLowerCase() === loginLower) {
         match = users[i];
         break;
       }

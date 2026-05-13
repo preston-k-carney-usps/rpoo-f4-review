@@ -259,10 +259,32 @@
             var key = fileToKey(filename);
             if (key === '_init') return; // skip init file
             if (isShared(key) && !pending[key]) {
-              var val = files[filename].content;
-              var current = _get(key);
-              if (current !== val) {
-                _set(key, val);
+              var gistVal = files[filename].content;
+              var localVal = _get(key);
+              if (localVal === gistVal) return; // no change
+
+              // Merge arrays by id to prevent data loss
+              if (localVal && gistVal) {
+                try {
+                  var localArr = JSON.parse(localVal);
+                  var gistArr = JSON.parse(gistVal);
+                  if (Array.isArray(localArr) && Array.isArray(gistArr)) {
+                    var gistIds = {};
+                    gistArr.forEach(function(item) { if (item && item.id) gistIds[item.id] = true; });
+                    var merged = gistArr.slice();
+                    localArr.forEach(function(item) {
+                      if (item && item.id && !gistIds[item.id]) merged.push(item);
+                    });
+                    if (merged.length > gistArr.length) {
+                      var mergedStr = JSON.stringify(merged);
+                      _set(key, mergedStr);
+                      queueWrite(key, mergedStr);
+                      return;
+                    }
+                  }
+                } catch(e) {}
+              }
+              _set(key, gistVal);
               }
             }
           });
@@ -318,12 +340,39 @@
             // Gist empty + no pending = seed gist with local data
             seedGist();
           } else {
-            // Pull gist data (skip keys with pending local writes)
+            // Pull gist data — merge arrays, overwrite scalars
             fileKeys.forEach(function(filename) {
               var key = fileToKey(filename);
               if (isShared(key) && !pending[key]) {
-                var val = files[filename].content;
-                _set(key, val);
+                var gistVal = files[filename].content;
+                var localVal = _get(key);
+
+                // For array-based keys, merge by id to prevent data loss
+                if (localVal && gistVal) {
+                  try {
+                    var localArr = JSON.parse(localVal);
+                    var gistArr = JSON.parse(gistVal);
+                    if (Array.isArray(localArr) && Array.isArray(gistArr)) {
+                      // Merge: gist items + local items not in gist (by id)
+                      var gistIds = {};
+                      gistArr.forEach(function(item) { if (item && item.id) gistIds[item.id] = true; });
+                      var merged = gistArr.slice();
+                      localArr.forEach(function(item) {
+                        if (item && item.id && !gistIds[item.id]) {
+                          merged.push(item);
+                        }
+                      });
+                      if (merged.length > gistArr.length) {
+                        // Local had items gist didn't — save merged and queue sync
+                        var mergedStr = JSON.stringify(merged);
+                        _set(key, mergedStr);
+                        queueWrite(key, mergedStr);
+                        return; // skip the normal set
+                      }
+                    }
+                  } catch(e) { /* not JSON arrays — fall through to normal overwrite */ }
+                }
+                _set(key, gistVal);
               }
             });
           }
@@ -493,22 +542,27 @@
   window.addEventListener('beforeunload', function() {
     if (!SYNC_ENABLED) return;
     var pending = getPendingWrites();
-    if (Object.keys(pending).length > 0) {
-      try {
-        var x = new XMLHttpRequest();
-        x.open('PATCH', GIST_API, false); // synchronous
-        x.setRequestHeader('Authorization', 'token ' + TOKEN);
-        x.setRequestHeader('Content-Type', 'application/json');
-        var files = {};
-        Object.keys(pending).forEach(function(key) {
-          var val = pending[key];
-          files[keyToFile(key)] = val === null ? null : { content: val };
-        });
-        x.send(JSON.stringify({ files: files }));
-        if (x.status === 200) savePendingWrites({});
-      } catch(e) {
-        // Pending writes stay in localStorage - will sync next time
-      }
+    var keys = Object.keys(pending);
+    if (keys.length === 0) return;
+    try {
+      var files = {};
+      var hasContent = false;
+      keys.forEach(function(key) {
+        var val = pending[key];
+        if (val !== null && val !== '' && val !== undefined) {
+          files[keyToFile(key)] = { content: String(val) };
+          hasContent = true;
+        }
+      });
+      if (!hasContent) { savePendingWrites({}); return; }
+      var x = new XMLHttpRequest();
+      x.open('PATCH', GIST_API, false); // synchronous
+      x.setRequestHeader('Authorization', 'token ' + TOKEN);
+      x.setRequestHeader('Content-Type', 'application/json');
+      x.send(JSON.stringify({ files: files }));
+      if (x.status === 200) savePendingWrites({});
+    } catch(e) {
+      // Pending writes stay in localStorage - will sync next time
     }
   });
 

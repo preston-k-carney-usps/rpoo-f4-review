@@ -433,6 +433,11 @@
     container.innerHTML = '';
     emptyEl.hidden = true;
     allClearEl.hidden = true;
+
+    // Push data to Gist now (especially important for PODs in manual sync mode)
+    if (window.AppSync && AppSync.forcePush) {
+      AppSync.forcePush();
+    }
   });
 
   function showEodStatus(msg, type) {

@@ -451,7 +451,23 @@ var Auth = (function() {
   function resolveRequest(id, status) {
     var reqs = getRequests();
     for (var i = 0; i < reqs.length; i++) {
-      if (reqs[i].id === id) { reqs[i].status = status; break; }
+      if (reqs[i].id === id) {
+        reqs[i].status = status;
+        // If approving an access request, create the user account
+        if (status === 'approved' && reqs[i].type === 'access' && reqs[i].email) {
+          var result = createUser({
+            displayName: reqs[i].displayName || (reqs[i].lastName + ', ' + reqs[i].firstName),
+            email: reqs[i].email,
+            password: '',
+            role: 'reviewer',
+            mustChangePassword: true
+          });
+          if (result && result.id) {
+            reqs[i].createdUserId = result.id;
+          }
+        }
+        break;
+      }
     }
     _saveRequests(reqs);
   }

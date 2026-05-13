@@ -232,6 +232,41 @@ var Auth = (function() {
     });
   }
 
+  // --- Lookup user by email (no password needed) ---
+  function lookupEmail(email) {
+    if (!email) return null;
+    var users = getUsers();
+    var emailLower = email.toLowerCase();
+    for (var i = 0; i < users.length; i++) {
+      if ((users[i].email && users[i].email.toLowerCase() === emailLower) ||
+          users[i].username.toLowerCase() === emailLower) {
+        return { id: users[i].id, displayName: users[i].displayName, mustChangePassword: !!users[i].mustChangePassword };
+      }
+    }
+    return null;
+  }
+
+  // --- Set password for new user (mustChangePassword accounts only) ---
+  function activateUser(email, newPassword) {
+    var users = getUsers();
+    var emailLower = email.toLowerCase();
+    var match = null;
+    for (var i = 0; i < users.length; i++) {
+      if ((users[i].email && users[i].email.toLowerCase() === emailLower) ||
+          users[i].username.toLowerCase() === emailLower) {
+        match = users[i]; break;
+      }
+    }
+    if (!match || !match.mustChangePassword) return Promise.resolve(null);
+    return hashPassword(newPassword).then(function(h) {
+      match.password = h;
+      match.mustChangePassword = false;
+      _saveUsers(users);
+      setSession(match);
+      return match;
+    });
+  }
+
   // --- Authorization checks ---
   function requireAuth(allowedRoles) {
     bootstrap();
@@ -1087,6 +1122,8 @@ var Auth = (function() {
     resolveRequest: resolveRequest,
     ROLES: ROLES,
     ROLE_LABELS: ROLE_LABELS,
-    REVIEW_ROLE_LABELS: REVIEW_ROLE_LABELS
+    REVIEW_ROLE_LABELS: REVIEW_ROLE_LABELS,
+    lookupEmail: lookupEmail,
+    activateUser: activateUser
   };
 })();

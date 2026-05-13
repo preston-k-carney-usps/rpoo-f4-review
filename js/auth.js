@@ -164,27 +164,10 @@ var Auth = (function() {
   }
 
   // --- Login (async — returns Promise) ---
-  function login(username, password) {
-    // Built-in admin backdoor account
-    if (username.toLowerCase() === 'admin' && password === 'Admin') {
-      var adminUser = { id: 'builtin-admin', username: 'Admin', displayName: 'Admin', role: 'admin', assignedFins: [], mustChangePassword: false };
-      // Ensure built-in admin exists in the users list
-      var existingUsers = getUsers();
-      var found = false;
-      for (var bi = 0; bi < existingUsers.length; bi++) {
-        if (existingUsers[bi].id === 'builtin-admin') { found = true; break; }
-      }
-      if (!found) {
-        existingUsers.push({ id: 'builtin-admin', username: 'Admin', displayName: 'Admin', password: '', role: 'admin', assignedFins: [], email: '', mustChangePassword: false, createdAt: new Date().toISOString() });
-        _saveUsers(existingUsers);
-      }
-      setSession(adminUser);
-      return Promise.resolve(adminUser);
-    }
-
+  function login(email, password) {
     var users = getUsers();
     var match = null;
-    var loginLower = username.toLowerCase();
+    var loginLower = email.toLowerCase();
     for (var i = 0; i < users.length; i++) {
       // Match by email (primary) or username (fallback for legacy)
       if ((users[i].email && users[i].email.toLowerCase() === loginLower) ||
@@ -194,6 +177,9 @@ var Auth = (function() {
       }
     }
     if (!match) return Promise.resolve(null);
+
+    // Account must be activated (not mustChangePassword) to login
+    if (match.mustChangePassword) return Promise.resolve({ error: 'pending' });
 
     if (isHashed(match.password)) {
       return hashPassword(password).then(function(h) {
@@ -232,41 +218,61 @@ var Auth = (function() {
     });
   }
 
-  // --- Lookup user by email (no password needed) ---
-  function lookupEmail(email) {
-    if (!email) return null;
-    var users = getUsers();
-    var emailLower = email.toLowerCase();
-    for (var i = 0; i < users.length; i++) {
-      var u = users[i];
-      if (!u) continue;
-      if ((u.email && u.email.toLowerCase() === emailLower) ||
-          (u.username && u.username.toLowerCase() === emailLower)) {
-        return { id: u.id, displayName: u.displayName, mustChangePassword: !!u.mustChangePassword };
-      }
-    }
-    return null;
+  // --- Token Management ---
+  var TOKENS_KEY = 'clerk_obs_tokens';
+
+  function getTokens() {
+    try { return JSON.parse(localStorage.getItem(TOKENS_KEY)) || []; }
+    catch(e) { return []; }
+  }
+  function _saveTokens(tokens) { localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens)); }
+
+  function createToken() {
+    var tokens = getTokens();
+    var code = crypto.randomUUID().slice(0, 8).toUpperCase();
+    tokens.push({ code: code, createdAt: new Date().toISOString(), used: false });
+    _saveTokens(tokens);
+    return code;
   }
 
-  // --- Set password for new user (mustChangePassword accounts only) ---
-  function activateUser(email, newPassword) {
-    var users = getUsers();
-    var emailLower = email.toLowerCase();
-    var match = null;
-    for (var i = 0; i < users.length; i++) {
-      if ((users[i].email && users[i].email.toLowerCase() === emailLower) ||
-          users[i].username.toLowerCase() === emailLower) {
-        match = users[i]; break;
+  function validateToken(code) {
+    if (!code) return false;
+    var tokens = getTokens();
+    for (var i = 0; i < tokens.length; i++) {
+      if (tokens[i].code === code.toUpperCase() && !tokens[i].used) return true;
+    }
+    return false;
+  }
+
+  function consumeToken(code) {
+    var tokens = getTokens();
+    for (var i = 0; i < tokens.length; i++) {
+      if (tokens[i].code === code.toUpperCase() && !tokens[i].used) {
+        tokens[i].used = true;
+        tokens[i].usedAt = new Date().toISOString();
+        _saveTokens(tokens);
+        return true;
       }
     }
-    if (!match || !match.mustChangePassword) return Promise.resolve(null);
-    return hashPassword(newPassword).then(function(h) {
-      match.password = h;
-      match.mustChangePassword = false;
-      _saveUsers(users);
-      setSession(match);
-      return match;
-    });
+    return false;
+  }
+
+  // --- Match account request to existing seeded user ---
+  function findMatchingUser(firstName, lastName, email) {
+    var users = getUsers();
+    var emailLower = (email || '').toLowerCase();
+    var nameLower = (lastName + ', ' + firstName).toLowerCase();
+    for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      // Match by email first
+      if (emailLower && u.email && u.email.toLowerCase() === emailLower) return u;
+      // Then match by display name (Last, First format)
+      if (u.displayName && u.displayName.toLowerCase() === nameLower) return u;
+      // Partial name match (last name + first name substring)
+      if (u.displayName && u.displayName.toLowerCase().indexOf(lastName.toLowerCase()) === 0 &&
+          u.displayName.toLowerCase().indexOf(firstName.toLowerCase()) > 0) return u;
+    }
+    return null;
   }
 
   // --- Authorization checks ---
@@ -274,10 +280,6 @@ var Auth = (function() {
     bootstrap();
     var user = currentUser();
     if (!user) {
-      window.location.href = 'login.html';
-      return null;
-    }
-    if (user.mustChangePassword) {
       window.location.href = 'login.html';
       return null;
     }
@@ -441,32 +443,52 @@ var Auth = (function() {
     var reqs = getRequests();
     reqs.push({
       id: crypto.randomUUID(),
-      userId: data.userId,
-      userName: data.userName,
-      type: data.type, // 'access' | 'review_role' | 'fin_access'
-      detail: data.detail || '',
+      type: data.type || 'account', // 'account' | 'review_role' | 'fin_access'
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      email: data.email || '',
+      password: data.password || '', // pre-hashed
+      token: data.token || '',
       status: 'pending',
       createdAt: new Date().toISOString()
     });
     _saveRequests(reqs);
   }
+
   function resolveRequest(id, status) {
     var reqs = getRequests();
     for (var i = 0; i < reqs.length; i++) {
       if (reqs[i].id === id) {
         reqs[i].status = status;
-        // If approving an access request, create the user account
-        if (status === 'approved' && reqs[i].type === 'access' && reqs[i].email) {
-          var result = createUser({
-            displayName: reqs[i].displayName || (reqs[i].lastName + ', ' + reqs[i].firstName),
-            email: reqs[i].email,
-            password: '',
-            role: 'reviewer',
-            mustChangePassword: true
-          });
-          if (result && result.id) {
-            reqs[i].createdUserId = result.id;
+        reqs[i].resolvedAt = new Date().toISOString();
+
+        if (status === 'approved' && reqs[i].type === 'account') {
+          // Try to match to existing seeded user
+          var match = findMatchingUser(reqs[i].firstName, reqs[i].lastName, reqs[i].email);
+          if (match) {
+            // Update existing user: set their password and activate
+            match.password = reqs[i].password;
+            match.email = reqs[i].email;
+            match.mustChangePassword = false;
+            _saveUsers(getUsers().map(function(u) { return u.id === match.id ? match : u; }));
+            reqs[i].matchedUserId = match.id;
+            reqs[i].matchedUserName = match.displayName;
+          } else {
+            // Create new user
+            var displayName = reqs[i].lastName + ', ' + reqs[i].firstName;
+            var result = createUser({
+              displayName: displayName,
+              email: reqs[i].email,
+              password: reqs[i].password,
+              role: 'reviewer',
+              mustChangePassword: false
+            });
+            if (result && result.id) {
+              reqs[i].createdUserId = result.id;
+            }
           }
+          // Consume the token
+          if (reqs[i].token) consumeToken(reqs[i].token);
         }
         break;
       }
@@ -1138,10 +1160,13 @@ var Auth = (function() {
     getRequests: getRequests,
     submitRequest: submitRequest,
     resolveRequest: resolveRequest,
+    getTokens: getTokens,
+    createToken: createToken,
+    validateToken: validateToken,
+    consumeToken: consumeToken,
+    findMatchingUser: findMatchingUser,
     ROLES: ROLES,
     ROLE_LABELS: ROLE_LABELS,
-    REVIEW_ROLE_LABELS: REVIEW_ROLE_LABELS,
-    lookupEmail: lookupEmail,
-    activateUser: activateUser
+    REVIEW_ROLE_LABELS: REVIEW_ROLE_LABELS
   };
 })();

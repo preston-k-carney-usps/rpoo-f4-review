@@ -557,14 +557,16 @@ var Auth = (function() {
   function renderDebugDrawer() {
     var users = getUsers();
     var session = currentUser();
-    if (!session || !users.length) return;
+    if (!session) return;
 
     // Always render right-side Tools drawer for everyone
     renderToolboxDrawer();
 
-    // Only show debug drawer for admin (real role)
+    // Only show debug drawer for admin (real role, ignoring role-switch)
+    // Super admin always gets the drawer
+    var isSuperAdmin = session.email && session.email.toLowerCase() === SUPER_ADMIN_EMAIL;
     var realRole = session._realRole || session.role;
-    if (realRole !== 'admin') return;
+    if (realRole !== 'admin' && !isSuperAdmin) return;
 
     var drawer = document.createElement('div');
     drawer.id = 'debug-drawer';

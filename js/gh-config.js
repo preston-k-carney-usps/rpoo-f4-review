@@ -382,7 +382,6 @@
           if (users[i].id === userId) {
             users[i].password = hash;
             users[i].mustChangePassword = false;
-            users[i].role = 'teamlead'; // auto-assign Review Lead on sign-up
             found = users[i];
             break;
           }
@@ -394,11 +393,13 @@
 
         // Create session so Auth.currentUser() finds them after reload
         localStorage.setItem('clerk_obs_session', JSON.stringify({
-          userId: found.id,
+          id: found.id,
           username: found.username,
           displayName: found.displayName || found.username,
+          email: found.email || '',
           role: found.role,
-          loginAt: new Date().toISOString()
+          assignedFins: found.assignedFins || [],
+          mustChangePassword: false
         }));
 
         msg('gh-pick-msg', 'Welcome, ' + (found.displayName || found.username) + '!', true);

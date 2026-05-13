@@ -50,6 +50,18 @@
     return false;
   }
 
+  // Deduplicate users array by username (case-insensitive), keeping first occurrence
+  function deduplicateUsers(arr) {
+    var seen = {};
+    return arr.filter(function(u) {
+      if (!u || !u.username) return true;
+      var k = u.username.toLowerCase().trim();
+      if (seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
+  }
+
   // Sanitize localStorage key to valid gist filename
   function keyToFile(key) { return key + '.json'; }
   function fileToKey(filename) {
@@ -319,6 +331,8 @@
                     localArr.forEach(function(item) {
                       if (item && item.id && !gistIds[item.id]) merged.push(item);
                     });
+                    // Deduplicate users by username to prevent seed-merge duplication
+                    if (key === 'clerk_obs_users') merged = deduplicateUsers(merged);
                     if (merged.length > gistArr.length) {
                       var mergedStr = JSON.stringify(merged);
                       _set(key, mergedStr);
@@ -409,6 +423,8 @@
                           merged.push(item);
                         }
                       });
+                      // Deduplicate users by username to prevent seed-merge duplication
+                      if (key === 'clerk_obs_users') merged = deduplicateUsers(merged);
                       if (merged.length > gistArr.length) {
                         // Local had items gist didn't — save merged and queue sync
                         var mergedStr = JSON.stringify(merged);

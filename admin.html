@@ -22,11 +22,35 @@
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="reviews-tab">Manage My Reviews</button>
       <button class="admin-tab" data-tab="users-tab">Manage Users</button>
-      <button class="admin-tab" data-tab="requests-tab">Manage Requests</button>
     </div>
 
     <!-- ====== USERS TAB ====== -->
     <div id="users-tab" class="admin-tab-panel">
+
+    <!-- Account Requests (at top) -->
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="margin:0;">Account Requests</h2>
+        <button id="refresh-requests-btn" class="btn btn-outline btn-sm" title="Refresh requests from server">&#8635; Refresh</button>
+      </div>
+      <p class="setup-subtitle">Review account requests from new users. The system will try to match their name/email to existing seeded users.</p>
+      <div id="requests-empty" class="empty-state">No pending requests.</div>
+      <div class="table-wrap">
+        <table class="summary-table" id="requests-table" hidden>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Match</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="requests-body"></tbody>
+        </table>
+      </div>
+    </section>
 
     <!-- Bulk Create Users -->
     <section class="card">
@@ -295,32 +319,6 @@
     </section>
 
     </div><!-- /reviews-tab -->
-
-    <!-- ====== REQUESTS TAB ====== -->
-    <div id="requests-tab" class="admin-tab-panel">
-
-      <!-- Account Requests -->
-      <section class="card">
-        <h2>Account Requests</h2>
-        <p class="setup-subtitle">Review account requests from new users. The system will try to match their name/email to existing seeded users.</p>
-        <div id="requests-empty" class="empty-state">No pending requests.</div>
-        <div class="table-wrap">
-          <table class="summary-table" id="requests-table" hidden>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Match</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="requests-body"></tbody>
-          </table>
-        </div>
-      </section>
-    </div><!-- /requests-tab -->
 
   </main>
 
@@ -1173,6 +1171,24 @@
     }
 
     renderRequests();
+
+    // --- Refresh requests button (pulls from Gist then re-renders) ---
+    document.getElementById('refresh-requests-btn').addEventListener('click', function() {
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Refreshing...';
+      if (window.AppSync && AppSync.forcePull) {
+        AppSync.forcePull(function() {
+          renderRequests();
+          btn.disabled = false;
+          btn.innerHTML = '&#8635; Refresh';
+        });
+      } else {
+        renderRequests();
+        btn.disabled = false;
+        btn.innerHTML = '&#8635; Refresh';
+      }
+    });
 
   })();
   </script>

@@ -117,7 +117,14 @@
     if (keys.length === 0) return;
 
     if (!online) {
-      updateStatusUI('offline', keys.length + ' changes queued');
+      // Try to come online before giving up
+      checkConnection(function(isOnline) {
+        if (isOnline) {
+          flushPending(); // retry now that we're online
+        } else {
+          updateStatusUI('offline', keys.length + ' changes queued');
+        }
+      });
       return;
     }
 

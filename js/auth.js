@@ -220,45 +220,6 @@ var Auth = (function() {
     });
   }
 
-  // --- Token Management ---
-  var TOKENS_KEY = 'clerk_obs_tokens';
-
-  function getTokens() {
-    try { return JSON.parse(localStorage.getItem(TOKENS_KEY)) || []; }
-    catch(e) { return []; }
-  }
-  function _saveTokens(tokens) { localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens)); }
-
-  function createToken() {
-    var tokens = getTokens();
-    var code = crypto.randomUUID().slice(0, 8).toUpperCase();
-    tokens.push({ code: code, createdAt: new Date().toISOString(), used: false });
-    _saveTokens(tokens);
-    return code;
-  }
-
-  function validateToken(code) {
-    if (!code) return false;
-    var tokens = getTokens();
-    for (var i = 0; i < tokens.length; i++) {
-      if (tokens[i].code === code.toUpperCase() && !tokens[i].used) return true;
-    }
-    return false;
-  }
-
-  function consumeToken(code) {
-    var tokens = getTokens();
-    for (var i = 0; i < tokens.length; i++) {
-      if (tokens[i].code === code.toUpperCase() && !tokens[i].used) {
-        tokens[i].used = true;
-        tokens[i].usedAt = new Date().toISOString();
-        _saveTokens(tokens);
-        return true;
-      }
-    }
-    return false;
-  }
-
   // --- Match account request to existing seeded user ---
   function findMatchingUser(firstName, lastName, email) {
     var users = getUsers();
@@ -1164,10 +1125,6 @@ var Auth = (function() {
     getRequests: getRequests,
     submitRequest: submitRequest,
     resolveRequest: resolveRequest,
-    getTokens: getTokens,
-    createToken: createToken,
-    validateToken: validateToken,
-    consumeToken: consumeToken,
     findMatchingUser: findMatchingUser,
     ROLES: ROLES,
     ROLE_LABELS: ROLE_LABELS,

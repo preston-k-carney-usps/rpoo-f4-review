@@ -163,8 +163,11 @@
       }
 
       // ---- First-run: no users exist ----
+      // Only show first-run setup if sync is configured AND connected (to avoid
+      // showing setup form when we just failed to pull from Gist)
       var allUsers = Auth.getUsers();
-      if (allUsers.length === 0) {
+      var syncConfigured = window.GH_CONFIG && window.GH_CONFIG.gistId;
+      if (allUsers.length === 0 && !syncConfigured) {
         showOnly(firstRunForm);
         var nameIn = document.getElementById('setup-name');
         var passIn = document.getElementById('setup-pass');

@@ -128,22 +128,25 @@
       '<div id="gh-pick" style="display:none;">' +
         '<div style="text-align:center;margin-bottom:16px;">' +
           '<div style="font-size:2rem;margin-bottom:4px;">&#128100;</div>' +
-          '<h3 style="color:#818cf8;margin:0 0 6px;">Who are you?</h3>' +
-          '<p style="color:#94a3b8;margin:0;font-size:0.85rem;">Select your name, then set a password.</p>' +
+          '<h3 style="color:#818cf8;margin:0 0 6px;">Request Access</h3>' +
+          '<p style="color:#94a3b8;margin:0;font-size:0.85rem;">Enter your info below. An admin will approve your account.</p>' +
         '</div>' +
-        '<select id="gh-name-pick" style="width:100%;padding:12px;background:#0f172a;' +
-          'border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:1rem;' +
-          'margin-bottom:12px;box-sizing:border-box;appearance:auto;">' +
-          '<option value="">-- Choose your name --</option></select>' +
-        '<input id="gh-pick-pass" type="password" placeholder="Set your password" style="width:100%;padding:12px;' +
+        '<input id="gh-pick-first" type="text" placeholder="First Name" style="width:100%;padding:12px;' +
           'background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;' +
           'font-size:1rem;margin-bottom:8px;box-sizing:border-box;" />' +
-        '<input id="gh-pick-pass2" type="password" placeholder="Confirm password" style="width:100%;padding:12px;' +
+        '<input id="gh-pick-last" type="text" placeholder="Last Name" style="width:100%;padding:12px;' +
           'background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;' +
-          'font-size:1rem;margin-bottom:12px;box-sizing:border-box;" />' +
+          'font-size:1rem;margin-bottom:8px;box-sizing:border-box;" />' +
+        '<div style="display:flex;align-items:center;margin-bottom:12px;">' +
+          '<input id="gh-pick-email" type="text" placeholder="USPS Email" style="flex:1;padding:12px;' +
+            'background:#0f172a;border:1px solid #334155;border-radius:8px 0 0 8px;border-right:none;color:#e2e8f0;' +
+            'font-size:1rem;box-sizing:border-box;" />' +
+          '<span style="padding:12px;background:#1e293b;border:1px solid #334155;border-left:none;' +
+            'border-radius:0 8px 8px 0;color:#64748b;font-size:0.9rem;white-space:nowrap;">@usps.gov</span>' +
+        '</div>' +
         '<button id="gh-btn-pick-go" style="width:100%;padding:12px;background:#4f46e5;' +
           'color:white;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;">' +
-          'Set Password &amp; Sign In</button>' +
+          'Request Access</button>' +
         '<div id="gh-pick-msg" style="margin-top:10px;font-size:0.85rem;text-align:center;"></div>' +
       '</div>' +
 
@@ -357,60 +360,58 @@
     // === Done - reload ===
     $('gh-btn-done').onclick = function() { location.reload(); };
 
-    // === Name picker: set password & sign in ===
+    // === Request Access: submit request ===
     $('gh-btn-pick-go').onclick = function() {
-      var sel = $('gh-name-pick');
-      var userId = sel.value;
-      var pw = $('gh-pick-pass').value;
-      var pw2 = $('gh-pick-pass2').value;
+      var first = $('gh-pick-first').value.trim();
+      var last = $('gh-pick-last').value.trim();
+      var emailPrefix = $('gh-pick-email').value.trim().toLowerCase();
 
-      if (!userId) { msg('gh-pick-msg', 'Please select your name.', false); return; }
-      if (!pw || pw.length < 4) { msg('gh-pick-msg', 'Password must be at least 4 characters.', false); return; }
-      if (pw !== pw2) { msg('gh-pick-msg', 'Passwords do not match.', false); return; }
+      if (!first || !last) { msg('gh-pick-msg', 'Please enter your first and last name.', false); return; }
+      if (!emailPrefix) { msg('gh-pick-msg', 'Please enter your USPS email.', false); return; }
+
+      var email = emailPrefix.indexOf('@') === -1 ? emailPrefix + '@usps.gov' : emailPrefix;
+      var displayName = last + ', ' + first;
+
+      // Check if email already exists as a user
+      var users = JSON.parse(localStorage.getItem('clerk_obs_users') || '[]');
+      for (var i = 0; i < users.length; i++) {
+        if (users[i].email && users[i].email.toLowerCase() === email.toLowerCase()) {
+          msg('gh-pick-msg', 'An account with that email already exists. Go to the login page to sign in.', false);
+          return;
+        }
+      }
+
+      // Check if a pending request already exists for this email
+      var reqs = JSON.parse(localStorage.getItem('clerk_obs_requests') || '[]');
+      for (var j = 0; j < reqs.length; j++) {
+        if (reqs[j].email && reqs[j].email.toLowerCase() === email.toLowerCase() && reqs[j].status === 'pending') {
+          msg('gh-pick-msg', 'A request for this email is already pending. Please wait for admin approval.', false);
+          return;
+        }
+      }
+
+      // Submit access request
+      reqs.push({
+        id: crypto.randomUUID(),
+        type: 'access',
+        firstName: first,
+        lastName: last,
+        displayName: displayName,
+        email: email,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('clerk_obs_requests', JSON.stringify(reqs));
 
       $('gh-btn-pick-go').disabled = true;
+      msg('gh-pick-msg', 'Access requested! An admin will review your request. You\u2019ll be able to log in once approved.', true);
 
-      // Hash password with SHA-256
-      var enc = new TextEncoder().encode(pw);
-      crypto.subtle.digest('SHA-256', enc).then(function(buf) {
-        var hash = Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
-
-        // Find and update user in stored users
-        var users = JSON.parse(localStorage.getItem('clerk_obs_users') || '[]');
-        var found = null;
-        for (var i = 0; i < users.length; i++) {
-          if (users[i].id === userId) {
-            users[i].password = hash;
-            users[i].mustChangePassword = false;
-            found = users[i];
-            break;
-          }
-        }
-        if (!found) { msg('gh-pick-msg', 'User not found. Try again.', false); $('gh-btn-pick-go').disabled = false; return; }
-
-        // Save updated users list
-        localStorage.setItem('clerk_obs_users', JSON.stringify(users));
-
-        // Create session so Auth.currentUser() finds them after reload
-        localStorage.setItem('clerk_obs_session', JSON.stringify({
-          id: found.id,
-          username: found.username,
-          displayName: found.displayName || found.username,
-          email: found.email || '',
-          role: found.role,
-          assignedFins: found.assignedFins || [],
-          mustChangePassword: false
-        }));
-
-        msg('gh-pick-msg', 'Welcome, ' + (found.displayName || found.username) + '!', true);
-
-        // Brief delay so they see the welcome, then redirect
-        setTimeout(function() {
-          window.location.href = 'index.html';
-        }, 800);
-      });
+      // After 3 seconds redirect to login
+      setTimeout(function() {
+        window.location.href = 'login.html';
+      }, 3000);
     };
-    $('gh-pick-pass2').addEventListener('keydown', function(e) {
+    $('gh-pick-email').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') $('gh-btn-pick-go').click();
     });
   }

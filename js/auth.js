@@ -238,9 +238,11 @@ var Auth = (function() {
     var users = getUsers();
     var emailLower = email.toLowerCase();
     for (var i = 0; i < users.length; i++) {
-      if ((users[i].email && users[i].email.toLowerCase() === emailLower) ||
-          users[i].username.toLowerCase() === emailLower) {
-        return { id: users[i].id, displayName: users[i].displayName, mustChangePassword: !!users[i].mustChangePassword };
+      var u = users[i];
+      if (!u) continue;
+      if ((u.email && u.email.toLowerCase() === emailLower) ||
+          (u.username && u.username.toLowerCase() === emailLower)) {
+        return { id: u.id, displayName: u.displayName, mustChangePassword: !!u.mustChangePassword };
       }
     }
     return null;

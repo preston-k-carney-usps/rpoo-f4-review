@@ -1397,7 +1397,7 @@
           var label = byFinance[f].office ? byFinance[f].office + ' (' + f + ')' : f;
           return esc(label) + ' <span style="color:var(--text-light);">(' + byFinance[f].emps.length + ' employees)</span>';
         }).join(', ');
-        noticeHtml += '<div style="font-size:0.75rem;color:#92400e;margin-top:3px;">These employees were not loaded.</div>';
+        noticeHtml += '<div style="margin-top:6px;"><button class="btn btn-sm btn-outline" id="override-extra-offices" style="font-size:0.78rem;padding:0.25rem 0.6rem;">Override — Load These Offices Anyway</button></div>';
         noticeHtml += '</div>';
       }
       if (missingOffices.length > 0) {
@@ -1479,6 +1479,65 @@
     html += '</tbody></table>';
     html += '<p style="font-size:0.75rem;color:var(--text-light);margin-top:0.4rem;">' + filteredEmployees.length + ' employees loaded' + (currentFin ? ' for office ' + currentFin : '') + '</p>';
     rosterOutput.innerHTML = html;
+
+    // Override button: load extra offices that weren't in the review
+    var overrideBtn = document.getElementById('override-extra-offices');
+    if (overrideBtn) {
+      overrideBtn.addEventListener('click', function() {
+        // Save extra office data to workbook keys and add them to the review
+        extraOffices.forEach(function(f) {
+          var oKey = 'clerk_obs_workbook_' + reviewId + '_' + f;
+          var oData = {};
+          try { oData = JSON.parse(localStorage.getItem(oKey)) || {}; } catch(e) {}
+          oData.roster = byFinance[f].emps;
+          localStorage.setItem(oKey, JSON.stringify(oData));
+        });
+        // Also add these offices to the review object so they're recognized going forward
+        if (rev) {
+          extraOffices.forEach(function(f) {
+            var officeName = byFinance[f].office || f;
+            var already = rev.offices.some(function(o) { return (o.financeNum || '').replace(/\D/g, '') === f; });
+            if (!already) {
+              rev.offices.push({ financeNum: f, officeName: officeName, startDate: rev.startDate || '', endDate: rev.endDate || '' });
+            }
+          });
+          Reviews.update(rev.id, { offices: rev.offices });
+        }
+        // Re-render with all employees (no filter)
+        overrideBtn.parentNode.parentNode.innerHTML = '<div style="padding:0.5rem 0.75rem;background:rgba(22,163,74,0.06);border:1px solid #86efac;border-radius:6px;font-size:0.82rem;"><strong style="color:#166534;">✅ Override applied.</strong> All offices loaded and added to this review.</div>';
+        // Re-render roster with all employees
+        filteredEmployees = employees;
+        var tableHtml = '<table class="wb-tacs-table wb-roster-table"><thead><tr>' +
+          '<th>Last</th><th>First</th><th>MI</th><th>EMP ID</th><th>Job Title</th><th>LDC</th><th>D/A</th><th>Level</th><th>Start</th><th>Days Off</th><th>Sen Date</th>' +
+          '</tr></thead><tbody>';
+        employees.forEach(function(emp) {
+          tableHtml += '<tr>' +
+            '<td class="wb-tacs-name">' + esc(emp.last) + '</td>' +
+            '<td>' + esc(emp.first) + '</td>' +
+            '<td>' + esc(emp.mi) + '</td>' +
+            '<td>' + esc(emp.empId) + '</td>' +
+            '<td>' + esc(emp.jobTitle) + '</td>' +
+            '<td>' + esc(emp.ldc) + '</td>' +
+            '<td>' + esc(emp.daCode) + '</td>' +
+            '<td>' + esc(emp.level) + '</td>' +
+            '<td>' + esc(emp.start) + '</td>' +
+            '<td>' + esc(emp.daysOff) + '</td>' +
+            '<td>' + esc(emp.senDate) + '</td>' +
+            '</tr>';
+        });
+        tableHtml += '</tbody></table>';
+        tableHtml += '<p style="font-size:0.75rem;color:var(--text-light);margin-top:0.4rem;">' + employees.length + ' employees loaded (all offices)</p>';
+        var existingTable = rosterOutput.querySelector('table');
+        var existingP = rosterOutput.querySelector('p:last-child');
+        if (existingTable) existingTable.outerHTML = tableHtml;
+        else rosterOutput.insertAdjacentHTML('beforeend', tableHtml);
+        if (existingP && existingP.textContent.indexOf('employees loaded') >= 0) existingP.remove();
+        // Save all to current office data too
+        var data = loadData();
+        data.roster = employees;
+        saveData(data);
+      });
+    }
 
     // Save current office roster
     var data = loadData();
@@ -1963,6 +2022,7 @@
       html += extraOffices.map(function(f) {
         return esc((byFinance[f].officeName || f) + ' (' + f + ')') + ' <span style="color:var(--text-light);">(' + byFinance[f].entries.length + ' entries)</span>';
       }).join(', ');
+      html += '<div style="margin-top:6px;"><button class="btn btn-sm btn-outline" id="override-extra-clock-offices" style="font-size:0.78rem;padding:0.25rem 0.6rem;">Override — Analyze These Offices Anyway</button></div>';
       html += '</div>';
     }
     if (missingOffices.length > 0) {
@@ -2149,6 +2209,27 @@
         if (savedCsv) analyzeClockRings(savedCsv, true);
       });
     });
+
+    // Override button for clock ring extra offices
+    var clockOverrideBtn = document.getElementById('override-extra-clock-offices');
+    if (clockOverrideBtn) {
+      clockOverrideBtn.addEventListener('click', function() {
+        // Add extra offices to the review and re-analyze
+        if (rev) {
+          extraOffices.forEach(function(f) {
+            var officeName = byFinance[f].officeName || f;
+            var already = rev.offices.some(function(o) { return (o.financeNum || '').replace(/\D/g, '') === f; });
+            if (!already) {
+              rev.offices.push({ financeNum: f, officeName: officeName, startDate: rev.startDate || '', endDate: rev.endDate || '' });
+            }
+          });
+          Reviews.update(rev.id, { offices: rev.offices });
+        }
+        // Re-run analysis — extra offices are now in the review
+        var savedCsv = localStorage.getItem('clerk_obs_clockring_csv_' + reviewId);
+        if (savedCsv) analyzeClockRings(savedCsv, true);
+      });
+    }
   }
 
   // ---------- Init ----------

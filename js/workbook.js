@@ -2199,7 +2199,7 @@
     var clockOverrideBtn = document.getElementById('override-extra-clock-offices');
     if (clockOverrideBtn) {
       clockOverrideBtn.addEventListener('click', function() {
-        // Add extra offices to the review and re-analyze
+        // Add extra offices to the review
         if (rev) {
           extraOffices.forEach(function(f) {
             var officeName = byFinance[f].officeName || f;
@@ -2210,6 +2210,15 @@
           });
           Reviews.update(rev.id, { offices: rev.offices });
         }
+        // Also save clock ring entries for extra offices to their workbook keys
+        extraOffices.forEach(function(f) {
+          var oKey = 'clerk_obs_workbook_' + reviewId + '_' + f;
+          var oData = {};
+          try { oData = JSON.parse(localStorage.getItem(oKey)) || {}; } catch(e) {}
+          // Save raw entries so they persist
+          oData.clockRingEntries = byFinance[f].entries;
+          localStorage.setItem(oKey, JSON.stringify(oData));
+        });
         // Re-run analysis — extra offices are now in the review
         var savedCsv = localStorage.getItem('clerk_obs_clockring_csv_' + reviewId);
         if (savedCsv) analyzeClockRings(savedCsv, true);

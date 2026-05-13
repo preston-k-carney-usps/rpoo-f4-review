@@ -226,7 +226,28 @@ var Auth = (function() {
     }
 
     // Account must be activated (not mustChangePassword) to login
-    if (match.mustChangePassword) return Promise.resolve({ error: 'pending' });
+    // But first: check if there's an approved request for this user and auto-activate
+    if (match.mustChangePassword) {
+      var reqs = getRequests();
+      var approvedReq = null;
+      for (var r = 0; r < reqs.length; r++) {
+        if (reqs[r].status === 'approved' && reqs[r].type === 'account' &&
+            reqs[r].email && reqs[r].email.toLowerCase() === loginLower) {
+          approvedReq = reqs[r];
+          break;
+        }
+      }
+      if (approvedReq && approvedReq.password) {
+        // Re-apply approved request: activate user with the password from the request
+        match.password = approvedReq.password;
+        match.email = approvedReq.email;
+        match.mustChangePassword = false;
+        _saveUsers(users.map(function(u) { return u.id === match.id ? match : u; }));
+        // Fall through to normal password check below
+      } else {
+        return Promise.resolve({ error: 'pending' });
+      }
+    }
 
     if (isHashed(match.password)) {
       return hashPassword(password).then(function(h) {

@@ -102,6 +102,7 @@
   // === Flush pending writes to Gist ===
   var flushTimer = null;
   var FLUSH_DELAY = 500;
+  var _singleKeyMode = false; // after 422, send one key at a time
 
   function scheduleFlush() {
     if (flushTimer) clearTimeout(flushTimer);
@@ -155,6 +156,15 @@
     // Rebuild keys to only include content keys
     keys = Object.keys(files).map(function(f) { return fileToKey(f); });
 
+    // In single-key mode (after a 422), send only the first key
+    if (_singleKeyMode && keys.length > 1) {
+      var oneKey = keys[0];
+      var oneFiles = {};
+      oneFiles[keyToFile(oneKey)] = files[keyToFile(oneKey)];
+      files = oneFiles;
+      keys = [oneKey];
+    }
+
     var payload = JSON.stringify({ files: files });
 
     var x = new XMLHttpRequest();
@@ -169,15 +179,28 @@
           if (current[k] === pending[k]) delete current[k];
         });
         savePendingWrites(current);
+        if (_singleKeyMode && getPendingCount() > 0) {
+          // More keys to flush in single-key mode
+          setTimeout(flushPending, 300);
+        } else {
+          _singleKeyMode = false;
+        }
         updateStatusUI('online', 'Synced');
-      } else if (x.status === 422) {
-        // Validation error — likely a bad/empty value or oversized content
-        // Try to identify and skip the problematic key
-        console.warn('[Sync] 422 error — dropping bad keys from queue. Response:', x.responseText);
+      } else if (x.status === 422 && keys.length > 1) {
+        // 422 with multiple keys — switch to single-key mode and retry
+        console.warn('[Sync] 422 with batch of ' + keys.length + ' — switching to single-key mode');
+        _singleKeyMode = true;
+        setTimeout(flushPending, 1000);
+      } else if (x.status === 422 && keys.length === 1) {
+        // Single key still fails — this specific key is the problem, skip it
+        console.warn('[Sync] 422 for key "' + keys[0] + '" — skipping. Response:', x.responseText);
         var current = getPendingWrites();
-        keys.forEach(function(k) { delete current[k]; });
+        delete current[keys[0]];
         savePendingWrites(current);
-        updateStatusUI('online', 'Sync recovered (' + keys.length + ' items skipped)');
+        _singleKeyMode = true; // continue single-key for remaining
+        updateStatusUI('online', 'Synced (1 skipped)');
+        if (getPendingCount() > 0) setTimeout(flushPending, 500);
+        else _singleKeyMode = false;
       } else {
         online = false;
         updateStatusUI('offline', 'Sync failed (HTTP ' + x.status + ') - will retry');

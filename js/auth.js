@@ -457,12 +457,13 @@ var Auth = (function() {
     _saveRequests(reqs);
   }
 
-  function resolveRequest(id, status) {
+  function resolveRequest(id, status, role) {
     var reqs = getRequests();
     for (var i = 0; i < reqs.length; i++) {
       if (reqs[i].id === id) {
         reqs[i].status = status;
         reqs[i].resolvedAt = new Date().toISOString();
+        var assignRole = role || 'reviewer';
 
         if (status === 'approved' && reqs[i].type === 'account') {
           // Try to match to existing seeded user
@@ -471,6 +472,7 @@ var Auth = (function() {
             // Update existing user: set their password and activate
             match.password = reqs[i].password;
             match.email = reqs[i].email;
+            match.role = assignRole;
             match.mustChangePassword = false;
             _saveUsers(getUsers().map(function(u) { return u.id === match.id ? match : u; }));
             reqs[i].matchedUserId = match.id;
@@ -482,7 +484,7 @@ var Auth = (function() {
               displayName: displayName,
               email: reqs[i].email,
               password: reqs[i].password,
-              role: 'reviewer',
+              role: assignRole,
               mustChangePassword: false
             });
             if (result && result.id) {

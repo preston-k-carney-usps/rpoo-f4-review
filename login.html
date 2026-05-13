@@ -13,24 +13,15 @@
   </nav>
 
   <main class="container login-container">
-    <!-- Step 1: Token + Choose Action -->
+    <!-- Step 1: Choose Action -->
     <section class="card login-card" id="gate-section">
       <h2>Welcome</h2>
-      <p class="setup-subtitle">Enter your access token to continue.</p>
-
-      <div class="form-row" id="token-row">
-        <div class="form-group fg-2">
-          <label for="gate-token">Access Token</label>
-          <input type="text" id="gate-token" placeholder="Enter token from admin" autocomplete="off" style="text-transform:uppercase;letter-spacing:0.1em">
-        </div>
-      </div>
-      <p id="token-error" class="status-msg error" hidden></p>
+      <p class="setup-subtitle">Log in with an existing account or request a new one.</p>
 
       <div class="setup-actions" style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-        <button id="btn-login" class="btn btn-primary btn-lg" style="flex:1;min-width:140px;opacity:0.5;" disabled>Log In</button>
-        <button id="btn-request" class="btn btn-secondary btn-lg" style="flex:1;min-width:140px;opacity:0.5;" disabled>Request Account</button>
+        <button id="btn-login" class="btn btn-primary btn-lg" style="flex:1;min-width:140px;">Log In</button>
+        <button id="btn-request" class="btn btn-secondary btn-lg" style="flex:1;min-width:140px;">Request Account</button>
       </div>
-      <p style="font-size:0.78rem;color:var(--text-light);margin-top:0.5rem;text-align:center;" id="token-hint">Enter a valid access token to continue</p>
     </section>
 
     <!-- Login Form -->
@@ -223,48 +214,18 @@
         return;
       }
 
-      // ---- Gate Section: Token + Log In / Request Account ----
-      var tokenInput   = document.getElementById('gate-token');
-      var tokenError   = document.getElementById('token-error');
-      var tokenHint    = document.getElementById('token-hint');
+      // ---- Gate Section: Log In / Request Account ----
       var btnLogin     = document.getElementById('btn-login');
       var btnRequest   = document.getElementById('btn-request');
 
-      // Enable both buttons when valid token entered
-      tokenInput.addEventListener('input', function() {
-        tokenError.hidden = true;
-        var code = tokenInput.value.trim();
-        if (code && Auth.validateToken(code)) {
-          btnLogin.disabled = false;
-          btnLogin.style.opacity = '1';
-          btnRequest.disabled = false;
-          btnRequest.style.opacity = '1';
-          tokenHint.textContent = 'Token valid — log in or request an account.';
-          tokenHint.style.color = 'var(--success)';
-        } else {
-          btnLogin.disabled = true;
-          btnLogin.style.opacity = '0.5';
-          btnRequest.disabled = true;
-          btnRequest.style.opacity = '0.5';
-          tokenHint.textContent = code ? 'Invalid or used token.' : 'Enter a valid access token to continue';
-          tokenHint.style.color = code ? 'var(--danger)' : '';
-        }
-      });
-
-      // Log In button → show login form (requires valid token)
+      // Log In button → show login form
       btnLogin.addEventListener('click', function() {
         showOnly(loginSection);
         document.getElementById('login-email').focus();
       });
 
-      // Request Account button → show request form (only if valid token)
+      // Request Account button → show request form
       btnRequest.addEventListener('click', function() {
-        var code = tokenInput.value.trim();
-        if (!Auth.validateToken(code)) {
-          tokenError.textContent = 'Please enter a valid access token.';
-          tokenError.hidden = false;
-          return;
-        }
         showOnly(reqSection);
         document.getElementById('req-first').focus();
       });
@@ -345,7 +306,6 @@
         if (!email) { reqErr.textContent = 'Please enter your USPS email.'; reqErr.hidden = false; return; }
         if (!pass || pass.length < 4) { reqErr.textContent = 'Password must be at least 4 characters.'; reqErr.hidden = false; return; }
         if (pass !== pass2) { reqErr.textContent = 'Passwords do not match.'; reqErr.hidden = false; return; }
-        if (!Auth.validateToken(token)) { reqErr.textContent = 'Invalid access token.'; reqErr.hidden = false; return; }
 
         reqSubmit.disabled = true;
         Auth.hashPassword(pass).then(function(hash) {
@@ -354,8 +314,7 @@
             firstName: first,
             lastName: last,
             email: email,
-            password: hash,
-            token: token
+            password: hash
           });
           reqSubmit.disabled = false;
           showOnly(doneSection);
@@ -376,11 +335,6 @@
         reqEmail.value = '';
         reqPass.value = '';
         reqPass2.value = '';
-        tokenInput.value = '';
-        btnRequest.disabled = true;
-        btnRequest.style.opacity = '0.5';
-        tokenHint.textContent = 'Enter a valid token to unlock "Request Account"';
-        tokenHint.style.color = '';
         showOnly(gateSection);
       });
     })();

@@ -489,8 +489,8 @@ var Auth = (function() {
               reqs[i].createdUserId = result.id;
             }
           }
-          // Consume the token
-          if (reqs[i].token) consumeToken(reqs[i].token);
+          // Clean up legacy token field
+          delete reqs[i].token;
         }
         break;
       }

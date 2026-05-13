@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -57,6 +57,7 @@
       <h3>Table of Contents</h3>
       <ol>
         <li><a href="#getting-started">Getting Started</a></li>
+        <li><a href="#data-sync">Data Sync Setup</a></li>
         <li><a href="#roles">Understanding Roles</a></li>
         <li><a href="#home">Home Page &amp; Review Cards</a></li>
         <li><a href="#pod-workflow">POD (Reviewer) Workflow</a></li>
@@ -84,35 +85,83 @@
     <!-- 1. GETTING STARTED -->
     <h2 id="getting-started">1. Getting Started</h2>
 
-    <h3>Logging In</h3>
+    <h3>First Time on a New Device</h3>
+    <p>When you open the app for the first time on any device, you'll see the <strong>Data Sync Setup</strong> screen. You need a <strong>team code</strong> from your admin to connect.</p>
     <div class="help-step">
       <span class="help-step-num">1</span>
-      <div class="help-step-text">Open the application in your web browser (Chrome, Edge, or Firefox recommended).</div>
+      <div class="help-step-text">Open the application URL in your browser (Chrome, Edge, or Firefox recommended).</div>
     </div>
     <div class="help-step">
       <span class="help-step-num">2</span>
-      <div class="help-step-text">Enter your <strong>username</strong> and <strong>password</strong>. Your username is typically your full name with no spaces, all lowercase (e.g., <code>johnsmith</code>).</div>
+      <div class="help-step-text">Click <strong>"I Have a Team Code"</strong> and paste the code your admin provided.</div>
     </div>
     <div class="help-step">
       <span class="help-step-num">3</span>
-      <div class="help-step-text">Your default password is the same as your username. On first login, you will be prompted to change your password.</div>
+      <div class="help-step-text">Once connected, click <strong>"Go to Login"</strong> to proceed to the login page.</div>
+    </div>
+
+    <div class="help-note">
+      <strong>💡 Note:</strong> You only need to enter the team code once per device/browser. After setup, data syncs automatically.
+    </div>
+
+    <h3>Requesting an Account</h3>
+    <p>If you don't have an account yet:</p>
+    <div class="help-step">
+      <span class="help-step-num">1</span>
+      <div class="help-step-text">On the login page, click <strong>"Request Account"</strong>.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">2</span>
+      <div class="help-step-text">Enter your <strong>first name</strong>, <strong>last name</strong>, <strong>USPS email</strong>, and choose a <strong>password</strong> (minimum 4 characters).</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">3</span>
+      <div class="help-step-text">Click <strong>"Submit Request"</strong>. Your request will be sent to an admin for approval.</div>
     </div>
     <div class="help-step">
       <span class="help-step-num">4</span>
+      <div class="help-step-text">Once approved, you can log in with your <strong>USPS email</strong> and the password you chose.</div>
+    </div>
+
+    <div class="help-tip">
+      <strong>✅ Tip:</strong> The system will try to match your name and email to an existing team member in the database. If matched, your account will be linked to your existing assignments.
+    </div>
+
+    <h3>Logging In</h3>
+    <div class="help-step">
+      <span class="help-step-num">1</span>
+      <div class="help-step-text">On the login page, click <strong>"Log In"</strong>.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">2</span>
+      <div class="help-step-text">Enter your <strong>USPS email</strong> (just the part before @usps.gov) and your <strong>password</strong>.</div>
+    </div>
+    <div class="help-step">
+      <span class="help-step-num">3</span>
       <div class="help-step-text">After logging in, you'll be taken to the <strong>Home</strong> page where you'll see your assigned reviews.</div>
     </div>
 
     <div class="help-note">
-      <strong>💡 Note:</strong> If you forget your password, contact your Review Lead or Admin to reset it. The default password is always your full name, lowercase, no spaces (e.g., "Jewel, Jeri L" → <code>jewel,jeril</code>).
+      <strong>💡 Note:</strong> If you forget your password, contact your Review Lead or Admin to reset it.
     </div>
 
-    <h3>First-Time Setup</h3>
-    <p>After logging in for the first time:</p>
-    <ol>
-      <li>Change your password when prompted (minimum 4 characters).</li>
-      <li>Check the <strong>Home</strong> page — your assigned review(s) will appear as cards.</li>
-      <li>Wait for your Review Lead to assign you to a review before starting.</li>
-    </ol>
+    <!-- 1b. DATA SYNC -->
+    <h2 id="data-sync">2. Data Sync Setup</h2>
+    <p>All data is automatically synced across devices through a shared cloud store. This means you can use the app on your phone, laptop, or any browser and see the same data.</p>
+
+    <h3>How It Works</h3>
+    <ul>
+      <li>Data saves to your browser <strong>instantly</strong> (works offline too).</li>
+      <li>Changes sync to the cloud within <strong>a few seconds</strong> when online.</li>
+      <li>Other devices pick up changes when they <strong>refresh the page</strong> or within 10 seconds automatically.</li>
+    </ul>
+
+    <h3>Getting the Team Code</h3>
+    <p>The team code is provided by your admin. It connects your device to the shared data store. You only need to enter it <strong>once per device</strong>.</p>
+
+    <div class="help-warn">
+      <strong>⚠️ Important:</strong> Do not share the team code outside your review team. It provides access to all shared data.
+    </div>
 
     <!-- 2. ROLES -->
     <h2 id="roles">2. Understanding Roles</h2>
@@ -649,15 +698,11 @@
 
     <h3>Manage Users Tab (Admin Only)</h3>
     <ul>
-      <li><strong>Bulk Create Users</strong>: paste a list of names (one per line), select a role, and click "Add Users". Usernames and default passwords are auto-generated.</li>
+      <li><strong>Account Requests</strong>: review and approve/deny account requests from new users. Each request shows the user's name, email, and whether they match an existing team member. Choose a role (POD, Review Lead, Read Only, Admin) before approving. Click <strong>↻ Refresh</strong> to pull the latest requests without reloading the page.</li>
+      <li><strong>Bulk Create Users</strong>: paste a list of names (one per line), select a role, and click "Add Users".</li>
       <li><strong>All Users Table</strong>: view all users with their role, assigned offices, and status. Edit or delete any user.</li>
       <li><strong>Edit User</strong>: change display name, email, password, role, or assigned offices.</li>
-      <li><strong>"Reset to Default Password"</strong>: resets a user's password to lowercase name, no spaces.</li>
-    </ul>
-
-    <h3>Manage Requests Tab (Admin Only)</h3>
-    <ul>
-      <li>Review and approve/deny access requests from users (role changes, review access).</li>
+      <li><strong>"Reset to Default Password"</strong>: resets a user's password so they must set a new one on next login.</li>
     </ul>
 
     <h3>System Tab</h3>
@@ -735,7 +780,7 @@
     <p>Yes — the layout is responsive. However, data entry is much easier on a laptop or desktop with a full keyboard.</p>
 
     <h4>Q: Does data sync between devices?</h4>
-    <p>No — all data is stored locally in your browser. You must use the same browser on the same computer each time. Do not switch browsers mid-review.</p>
+    <p>Yes — once you've entered the team code, all data syncs automatically through a shared cloud store. Changes appear on other devices within seconds. If you don't see the latest data, refresh the page (Ctrl+Shift+R or pull down on mobile).</p>
 
     <h4>Q: Which browsers are supported?</h4>
     <p>Chrome (recommended), Microsoft Edge, and Firefox. Internet Explorer is not supported.</p>

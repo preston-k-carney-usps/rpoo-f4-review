@@ -315,6 +315,10 @@
             email: email,
             password: hash
           });
+          // Force sync to Gist immediately
+          if (window.AppSync && AppSync.forcePush) {
+            AppSync.forcePush();
+          }
           reqSubmit.disabled = false;
           showOnly(doneSection);
         }).catch(function(e) {

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1090,7 +1090,7 @@
       requestsEmpty.style.display = 'none';
       requestsTable.hidden = false;
 
-      var typeLabels = { review_access: 'Review Access', review_role: 'Role Change' };
+      var typeLabels = { review_access: 'Review Access', review_role: 'Role Change', access: 'New Account' };
 
       requestsBody.innerHTML = reqs.map(function(r) {
         var statusBadge = '';
@@ -1111,11 +1111,13 @@
         }
 
         var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—';
+        var nameDisplay = r.type === 'access' ? esc(r.displayName || (r.lastName + ', ' + r.firstName)) : esc(r.userName || '—');
+        var detailDisplay = r.type === 'access' ? esc(r.email || '') : esc(r.detail);
 
         return '<tr>' +
-          '<td>' + esc(r.userName || '—') + '</td>' +
+          '<td>' + nameDisplay + '</td>' +
           '<td>' + (typeLabels[r.type] || r.type) + '</td>' +
-          '<td>' + esc(r.detail) + '</td>' +
+          '<td>' + detailDisplay + '</td>' +
           '<td>' + date + '</td>' +
           '<td>' + statusBadge + '</td>' +
           '<td class="actions-cell">' + actions + '</td>' +

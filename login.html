@@ -26,24 +26,27 @@
           </div>
         </div>
       </div>
-      <!-- Step 2a: existing user password -->
-      <div class="form-row" id="login-pass-row" hidden>
-        <div class="form-group fg-2">
-          <label for="login-pass">Password</label>
-          <input type="password" id="login-pass" autocomplete="current-password">
+      <!-- Step 2: shown after Continue -->
+      <div id="login-step2" hidden>
+        <!-- existing user: password -->
+        <div class="form-row" id="login-pass-row" hidden>
+          <div class="form-group fg-2">
+            <label for="login-pass">Password</label>
+            <input type="password" id="login-pass" autocomplete="current-password">
+          </div>
         </div>
-      </div>
-      <!-- Step 2b: new user create password -->
-      <div class="form-row" id="login-newpw-row" hidden>
-        <div class="form-group fg-2">
-          <label for="login-newpw">Create Password</label>
-          <input type="password" id="login-newpw" autocomplete="new-password">
+        <!-- new user: create password -->
+        <div class="form-row" id="login-newpw-row" hidden>
+          <div class="form-group fg-2">
+            <label for="login-newpw">Create Password</label>
+            <input type="password" id="login-newpw" autocomplete="new-password">
+          </div>
         </div>
-      </div>
-      <div class="form-row" id="login-confirmpw-row" hidden>
-        <div class="form-group fg-2">
-          <label for="login-confirmpw">Confirm Password</label>
-          <input type="password" id="login-confirmpw" autocomplete="new-password">
+        <div class="form-row" id="login-confirmpw-row" hidden>
+          <div class="form-group fg-2">
+            <label for="login-confirmpw">Confirm Password</label>
+            <input type="password" id="login-confirmpw" autocomplete="new-password">
+          </div>
         </div>
       </div>
       <div class="setup-actions">
@@ -181,6 +184,7 @@
       }
 
       var userIn   = document.getElementById('login-user');
+      var step2    = document.getElementById('login-step2');
       var passRow  = document.getElementById('login-pass-row');
       var passIn   = document.getElementById('login-pass');
       var newPwRow = document.getElementById('login-newpw-row');
@@ -198,76 +202,87 @@
         return u;
       }
 
+      function showError(msg) {
+        errEl.textContent = msg;
+        errEl.hidden = false;
+      }
+
       function doAction() {
-        errEl.hidden = true;
+        try {
+          errEl.hidden = true;
 
-        if (step === 'email') {
-          // Step 1: check email
-          var u = getEmail();
-          if (!u) { errEl.textContent = 'Please enter your USPS email.'; errEl.hidden = false; return; }
-          var info = Auth.lookupEmail(u);
-          userIn.readOnly = true;
-          userIn.style.opacity = '0.7';
-          if (info && info.mustChangePassword) {
-            // New user — create password
-            step = 'create';
-            subtitle.textContent = 'Welcome! Create a password for your account.';
-            newPwRow.hidden = false;
-            confPwRow.hidden = false;
-            btn.textContent = 'Create Account';
-            newPwIn.focus();
-          } else {
-            // Existing user or unknown — enter password
-            step = 'password';
-            subtitle.textContent = 'Enter your password.';
-            passRow.hidden = false;
-            btn.textContent = 'Sign In';
-            passIn.focus();
+          if (step === 'email') {
+            var u = getEmail();
+            if (!u) { showError('Please enter your USPS email.'); return; }
+
+            // Look up user
+            var info = null;
+            try { info = Auth.lookupEmail(u); } catch(e) { console.error('lookupEmail error:', e); }
+
+            userIn.readOnly = true;
+            userIn.style.opacity = '0.7';
+            step2.hidden = false;
+
+            if (info && info.mustChangePassword) {
+              step = 'create';
+              subtitle.textContent = 'Welcome! Create a password for your account.';
+              newPwRow.hidden = false;
+              confPwRow.hidden = false;
+              btn.textContent = 'Create Account';
+              setTimeout(function() { newPwIn.focus(); }, 50);
+            } else {
+              step = 'password';
+              subtitle.textContent = 'Enter your password.';
+              passRow.hidden = false;
+              btn.textContent = 'Sign In';
+              setTimeout(function() { passIn.focus(); }, 50);
+            }
+            return;
           }
-          return;
-        }
 
-        if (step === 'create') {
-          var u = getEmail();
-          var np = newPwIn.value;
-          var cp = confPwIn.value;
-          if (!np || np.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; errEl.hidden = false; return; }
-          if (np !== cp) { errEl.textContent = 'Passwords do not match.'; errEl.hidden = false; return; }
-          btn.disabled = true;
-          Auth.activateUser(u, np).then(function(result) {
-            btn.disabled = false;
-            if (result) {
-              window.location.href = 'index.html';
-            } else {
-              errEl.textContent = 'Could not activate account. Try signing in instead.';
-              errEl.hidden = false;
-              resetToEmail();
-            }
-          });
-          return;
-        }
-
-        if (step === 'password') {
-          var u = getEmail();
-          var p = passIn.value;
-          if (!p) { errEl.textContent = 'Please enter your password.'; errEl.hidden = false; return; }
-          btn.disabled = true;
-          Auth.login(u, p).then(function(result) {
-            btn.disabled = false;
-            if (result) {
-              if (result.mustChangePassword) {
-                showPwChange(result);
-              } else {
+          if (step === 'create') {
+            var u = getEmail();
+            var np = newPwIn.value;
+            var cp = confPwIn.value;
+            if (!np || np.length < 4) { showError('Password must be at least 4 characters.'); return; }
+            if (np !== cp) { showError('Passwords do not match.'); return; }
+            btn.disabled = true;
+            Auth.activateUser(u, np).then(function(result) {
+              btn.disabled = false;
+              if (result) {
                 window.location.href = 'index.html';
+              } else {
+                showError('Could not activate account. Try signing in instead.');
+                resetToEmail();
               }
-            } else {
-              errEl.textContent = 'Incorrect password.';
-              errEl.hidden = false;
-              passIn.value = '';
-              passIn.focus();
-            }
-          });
-          return;
+            }).catch(function(e) { btn.disabled = false; showError('Error: ' + e.message); });
+            return;
+          }
+
+          if (step === 'password') {
+            var u = getEmail();
+            var p = passIn.value;
+            if (!p) { showError('Please enter your password.'); return; }
+            btn.disabled = true;
+            Auth.login(u, p).then(function(result) {
+              btn.disabled = false;
+              if (result) {
+                if (result.mustChangePassword) {
+                  showPwChange(result);
+                } else {
+                  window.location.href = 'index.html';
+                }
+              } else {
+                showError('Incorrect password.');
+                passIn.value = '';
+                passIn.focus();
+              }
+            }).catch(function(e) { btn.disabled = false; showError('Error: ' + e.message); });
+            return;
+          }
+        } catch(e) {
+          console.error('Login error:', e);
+          showError('Something went wrong: ' + e.message);
         }
       }
 
@@ -275,6 +290,7 @@
         step = 'email';
         userIn.readOnly = false;
         userIn.style.opacity = '';
+        step2.hidden = true;
         passRow.hidden = true;
         newPwRow.hidden = true;
         confPwRow.hidden = true;

@@ -2124,6 +2124,23 @@ html.dark .basic-calc-btn.bc-eq { background: var(--primary); color: #fff; }
   background: var(--primary) !important; color: #fff !important; border-color: var(--primary) !important;
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
 }
+/* Office assignment status indicators */
+.wb-mode-btn--complete {
+  border-color: #059669; background: rgba(5, 150, 105, 0.1); color: #34d399;
+}
+.wb-mode-btn--complete:hover { background: #059669; color: #fff; border-color: #059669; }
+.wb-mode-btn--incomplete {
+  border-color: #dc2626; background: rgba(220, 38, 38, 0.1); color: #f87171;
+}
+.wb-mode-btn--incomplete:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+.wb-mode-btn--active.wb-mode-btn--complete {
+  background: #059669 !important; color: #fff !important; border-color: #059669 !important;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.4);
+}
+.wb-mode-btn--active.wb-mode-btn--incomplete {
+  background: #dc2626 !important; color: #fff !important; border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.4);
+}
 /* Lead mode toggle (Manage / My Notes) */
 .wb-lead-toggle {
   padding: 0.35rem 0.75rem; border: none; background: var(--bg);

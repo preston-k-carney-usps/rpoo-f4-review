@@ -141,6 +141,16 @@
         // Deletes/empty values — don't send to gist (causes 422 if file doesn't exist)
         // Just remove from pending queue silently
       } else {
+        // Safety: don't push users if array is suspiciously small (prevents overwrite)
+        if (key === 'clerk_obs_users') {
+          try {
+            var arr = JSON.parse(val);
+            if (Array.isArray(arr) && arr.length < 10) {
+              console.warn('[Sync] Refusing to push clerk_obs_users with only ' + arr.length + ' users (possible data loss)');
+              return;
+            }
+          } catch(e) {}
+        }
         files[keyToFile(key)] = { content: String(val) };
         hasContent = true;
       }
@@ -268,7 +278,13 @@
             var key = fileToKey(filename);
             if (key === '_init') return; // skip init file
             if (isShared(key) && !pending[key]) {
-              var gistVal = files[filename].content;
+              var fileObj = files[filename];
+              // Skip truncated files — GitHub returns empty content for large Gists
+              if (fileObj.truncated) {
+                console.warn('[Sync] Skipping truncated file:', filename);
+                return;
+              }
+              var gistVal = fileObj.content;
               var localVal = _get(key);
               if (localVal === gistVal) return; // no change
 

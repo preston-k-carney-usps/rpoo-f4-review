@@ -169,10 +169,12 @@ var Auth = (function() {
     var match = null;
     var loginLower = email.toLowerCase();
     for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      if (!u) continue;
       // Match by email (primary) or username (fallback for legacy)
-      if ((users[i].email && users[i].email.toLowerCase() === loginLower) ||
-          users[i].username.toLowerCase() === loginLower) {
-        match = users[i];
+      if ((u.email && u.email.toLowerCase() === loginLower) ||
+          (u.username && u.username.toLowerCase() === loginLower)) {
+        match = u;
         break;
       }
     }

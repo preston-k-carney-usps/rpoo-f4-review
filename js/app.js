@@ -10,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!authUser) return;
   Auth.renderNavbar();
 
+  // POD reviewers: manual sync mode — data saves locally, only pushes on End of Day submit
+  if (authUser.role === 'reviewer' && window.AppSync && AppSync.setManualMode) {
+    AppSync.setManualMode(true);
+  }
+
   const container  = document.getElementById('rows-container');
   const noRowsMsg  = document.getElementById('no-rows-msg');
 

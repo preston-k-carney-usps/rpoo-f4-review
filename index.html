@@ -35,39 +35,10 @@
     var main = document.getElementById('main-content');
     var roleBadge = Auth.REVIEW_ROLE_LABELS || { clerk: 'Clerk Reviewer', mailhandler: 'Mail Handler Reviewer', lead: 'Workbook Lead', teamlead: 'Review Lead' };
 
-    // Load user's reviews
-    var myReviews;
-    var allReviewsList = Reviews.getAll();
+    // Load user's reviews — offline mode: show all reviews on this device
+    var myReviews = Reviews.getAll();
+    var allReviewsList = myReviews;
 
-    // Everyone sees reviews they're assigned to
-    myReviews = allReviewsList.filter(function(r) {
-      return r.assignments.some(function(a) { return a.userId === user.id; }) ||
-             r.createdBy === user.id;
-    });
-
-    // Also include reviews where user is on the travel survey assignment list
-    var myRevIds = {};
-    myReviews.forEach(function(r) { myRevIds[r.id] = true; });
-    for (var tsi = 0; tsi < localStorage.length; tsi++) {
-      var tsKey = localStorage.key(tsi);
-      if (tsKey && tsKey.indexOf('clerk_obs_travel_survey_') === 0) {
-        try {
-          var tsData = JSON.parse(localStorage.getItem(tsKey));
-          if (tsData && tsData.assignments && tsData.assignments.some(function(a) { return a.userId === user.id; })) {
-            var tsRevId = tsKey.replace('clerk_obs_travel_survey_', '');
-            if (!myRevIds[tsRevId]) {
-              var tsRev = Reviews.getById(tsRevId);
-              if (tsRev) { myReviews.push(tsRev); myRevIds[tsRevId] = true; }
-            }
-          }
-        } catch(e) {}
-      }
-    }
-
-    // Debug mode fallback
-    if (myReviews.length === 0 && user._realRole === 'admin') {
-      myReviews = allReviewsList;
-    }
     var allObs = Storage.hydrate(Storage.getAll());
     var myObs = Auth.filterVisible(allObs);
 
